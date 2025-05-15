@@ -55,9 +55,12 @@ public class SquareGrid : MonoBehaviour
         }
     }
 
+    public void HighlightCell(Vector2 coords) {
+        Debug.Log(coords);
+    }
+
     private void InitializeCell(ref Cell cell, int i, int j) {
         cell.transform.position = new Vector3(j, 0, i);
-        Debug.Log(cellInfo.Length);
         cell.info = cellInfo[j * size + i];
         cell.UpdateState();
         cell.SetCoords(i, j);
