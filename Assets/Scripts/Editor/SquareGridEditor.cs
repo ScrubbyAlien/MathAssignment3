@@ -17,7 +17,7 @@ public class SquareGridEditor : Editor
             grid.GenerateGrid();
         }
         if (GUILayout.Button("Clear Grid")) {
-            grid.ClearCells();
+            grid.ClearCells(true);
         }
     }
 }

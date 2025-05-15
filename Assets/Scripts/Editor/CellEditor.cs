@@ -14,10 +14,12 @@ public class CellEditor : Editor
         EditorGUILayout.PropertyField(info);
 
         if (serializedObject.ApplyModifiedProperties()) {
+            List<Cell> targetCells = new List<Cell>();
             foreach (Cell targetCell in targets) {
-                Undo.RecordObject(targetCell, "Cell state changes");
+                targetCells.Add(targetCell);
                 targetCell.CellInfoChanged();
             }
+            Undo.RecordObjects(targetCells.ToArray(), "Cell state changes");
         }
     }
 }
