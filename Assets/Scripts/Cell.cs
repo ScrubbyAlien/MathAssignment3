@@ -1,12 +1,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEngine;
 using UnityEditor;
 
 [SelectionBase]
 public class Cell : MonoBehaviour
 {
+    [SerializeField]
+    public CellInfo info;
+    [SerializeField]
+    private GameObject[] stateObjects;
+    [SerializeField]
+    private GameObject highlightMarker;
+
+    [SerializeField]
+    private bool coordsSet = false;
+    private (int j, int i) coords;
+
     private IEnumerable<(int index, bool value)> GetStateIndices() {
         int state = info.state;
         for (int i = 0; i < 4; i++) {
@@ -18,12 +30,9 @@ public class Cell : MonoBehaviour
 
     public void UpdateState() {
         foreach ((int index, bool value) in GetStateIndices()) {
-            transform.GetChild(index + 1).gameObject.SetActive(value);
+            stateObjects[index].gameObject.SetActive(value);
         }
     }
-
-    private bool coordsSet = false;
-    private (int j, int i) coords;
 
     public void SetCoords(int i, int j) {
         if (!coordsSet) {
@@ -32,13 +41,17 @@ public class Cell : MonoBehaviour
         }
     }
 
-    [SerializeField]
-    public CellInfo info;
-
     public event Action<CellInfo, int, int> OnCellInfoChange;
     public void CellInfoChanged() {
         OnCellInfoChange?.Invoke(info, coords.i, coords.j);
         UpdateState();
+    }
+
+    public void Highlight() {
+        highlightMarker.gameObject.SetActive(true);
+    }
+    public void Unhighlight() {
+        highlightMarker.gameObject.SetActive(false);
     }
 }
 

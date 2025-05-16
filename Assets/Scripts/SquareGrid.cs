@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
+[SelectionBase]
 public class SquareGrid : MonoBehaviour
 {
     [SerializeField, Min(3)]
@@ -66,6 +68,8 @@ public class SquareGrid : MonoBehaviour
         cell.SetCoords(i, j);
         cell.name = "Cell" + j + "," + i;
         cell.OnCellInfoChange += UpdateCellInfo;
+        // disable picking this object in the scene view
+        // SceneVisibilityManager.instance.DisablePicking(cell.gameObject, true);
     }
 
     private void UpdateCellInfo(CellInfo info, int i, int j) {
