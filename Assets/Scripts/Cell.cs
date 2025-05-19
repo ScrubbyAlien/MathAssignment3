@@ -12,8 +12,6 @@ public class Cell : MonoBehaviour
     public CellInfo info;
     [SerializeField]
     private GameObject[] stateObjects;
-    [SerializeField]
-    private GameObject highlightMarker;
 
     [SerializeField]
     private bool coordsSet = false;
@@ -45,13 +43,6 @@ public class Cell : MonoBehaviour
     public void CellInfoChanged() {
         OnCellInfoChange?.Invoke(info, coords.i, coords.j);
         UpdateState();
-    }
-
-    public void Highlight() {
-        highlightMarker.gameObject.SetActive(true);
-    }
-    public void Unhighlight() {
-        highlightMarker.gameObject.SetActive(false);
     }
 }
 

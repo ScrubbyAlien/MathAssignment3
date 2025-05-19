@@ -23,8 +23,9 @@ public class PaintTool : EditorTool
 
         foreach (var obj in targets) {
             if (!(obj is Highlighter highlighter)) continue;
+            if (!highlighter.currentCell) continue;
 
-            if (highlighter.currentCell) highlighter.currentCell.Highlight();
+            highlighter.ShowMarker();
 
             if (EditorGUI.EndChangeCheck()) {
                 // Undo.RecordObject(highlighter, "Interpolator");
