@@ -1,0 +1,21 @@
+#unity-text-input {
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-bottom: 3px;
+    padding-left: 7px;
+    min-width: auto;
+    width: auto;
+    flex-shrink: 0;
+    flex-basis: 0;
+    max-width: none;
+    flex-grow: 1;
+    flex-direction: row;
+    align-self: flex-end;
+}
+
+.unity-text-element {
+    min-width: 0;
+    align-self: auto;
+    justify-content: flex-start;
+    align-items: auto;
+}

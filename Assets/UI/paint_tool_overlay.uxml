@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/paint_tool_overlay_style.uss?fileID=7433441132597879392&amp;guid=110d84c9fe1869742ac2f33a2f6f4a6a&amp;type=3#paint_tool_overlay_style" />
+    <ui:Label tabindex="-1" text="Hello" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+    <ui:Button text="Button" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+</ui:UXML>
