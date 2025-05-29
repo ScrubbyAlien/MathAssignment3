@@ -50,26 +50,51 @@ public class Cell : MonoBehaviour
 public struct CellInfo
 {
     [SerializeField]
-    private byte byteState;
+    private int _state;
+    public int state => _state;
+
+    private int _obstacleValue;
+    private int _endPoint;
+
+    public int obstacleValue {
+        get {
+            if (InState(State.Obstacle)) return _obstacleValue;
+            else return 0;
+        }
+        set {
+            if (value < 1) {
+                _obstacleValue = 1;
+            }
+            else {
+                _obstacleValue = value;
+            }
+        }
+    }
+    public int endPoint {
+        get => _endPoint;
+        set => _endPoint = value;
+    }
 
     public static CellInfo empty => new CellInfo();
 
-    public void SetState(State state, bool value) {
-        if (value) {
-            byteState |= (byte)state;
-        }
-        else {
-            byteState &= (byte)(~state);
-        }
+    public void SetState(State newState, bool value) {
+        if (value) _state |= (int)newState;
+        else _state &= ~(int)newState;
     }
 
-    public int state => (int)byteState;
+    public void SetState(int newState) {
+        _state = newState;
+    }
+
+    public bool InState(State queryState) {
+        return (_state & (int)queryState) > 0;
+    }
 
     public void ClearState() {
-        byteState = 0;
+        _state = 0;
     }
 
-    public enum State : byte
+    public enum State : int
     {
         Unoccupied = 0,
         Blocked = 0b_0001,
@@ -80,7 +105,7 @@ public struct CellInfo
 
     /// <inheritdoc />
     public override string ToString() {
-        return Convert.ToString(byteState, 2).PadLeft(4, '0');
+        return Convert.ToString(_state, 2).PadLeft(4, '0');
     }
 }
 

@@ -13,7 +13,12 @@ public class SquareGridEditor : Editor
     /// <inheritdoc />
     public override void OnInspectorGUI() {
         base.OnInspectorGUI();
-        if (GUILayout.Button("Generate Grid")) {
+
+        string generateButtonString;
+        if (grid.sizeChanged) generateButtonString = "Regenerate Grid";
+        else generateButtonString = "Generate Grid";
+
+        if (GUILayout.Button(generateButtonString)) {
             grid.GenerateGrid();
         }
         if (GUILayout.Button("Clear Grid")) {
