@@ -9,6 +9,7 @@ public class SquareGrid : MonoBehaviour
 {
     [SerializeField, Min(3)]
     private int size;
+    public int gridSize => size;
 
     private int currentSize;
 
@@ -35,6 +36,12 @@ public class SquareGrid : MonoBehaviour
         }
     }
 
+    public bool sizeChanged => currentSize != size;
+
+    private void OnEnable() {
+        // TODO check if has children an generate info from them if so
+    }
+
     public void GenerateGrid() {
         if (size != currentSize) {
             ClearCells(true);
@@ -55,7 +62,6 @@ public class SquareGrid : MonoBehaviour
                 this[j, i] = cell;
             }
         }
-        
     }
 
     private void InitializeCell(ref Cell cell, int i, int j) {

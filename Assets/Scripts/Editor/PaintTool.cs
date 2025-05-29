@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
@@ -11,6 +12,13 @@ public class PaintTool : EditorTool
 {
     public static bool isActive { get; private set; }
 
+    private Ray ptwr;
+    private PaintToolOverlayPanel palette;
+
+    private int currentState = 0;
+    private int currentObstacleWeight = 1;
+    private Vector2 currentEndPoint;
+
     [Shortcut("Activate Paint Tool", KeyCode.U)]
     static void PaintToolShortcut() {
         if (Selection.GetFiltered<SquareGrid>(SelectionMode.TopLevel).Length > 0) {
@@ -18,28 +26,37 @@ public class PaintTool : EditorTool
         }
     }
 
-    private Ray ptwr;
-
     public override void OnToolGUI(EditorWindow window) {
         if (!(window is SceneView)) return;
-        isActive = true;
-
-        SceneView.duringSceneGui += UpdateSceneViewMouseRay;
 
         // https://discussions.unity.com/t/prevent-custom-editortool-from-being-deselected-with-mouse-button-clicks/929028
         HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
 
         foreach (var obj in targets) {
             if (!(obj is SquareGrid grid)) continue;
-
-            // Vector3 gp = grid.transform.position;
-            // Vector3 xAxisStart = new Vector3(gp.x + 0.5f, 0, gp.z - 0.5f);
-            // Vector3 xAxisEnd = new Vector3(gp.x + 3.5f, 0, gp.z - 0.5f);
-            // Handles.color = Color.red;
-
-            if (!HighlightCurrentCell(ref grid, out Cell currentCell)) continue;
+            palette.SetCurrentGrid(in grid);
+            if (currentObstacleWeight < 1) currentObstacleWeight = 1;
+            
+            if (!HighlightCurrentCell(grid, out Cell currentCell)) continue;
 
             if (EditorGUI.EndChangeCheck()) { }
+        }
+    }
+
+    /// <inheritdoc />
+    public override void OnActivated() {
+        base.OnActivated();
+        SceneView.duringSceneGui += UpdateSceneViewMouseRay;
+        isActive = true;
+
+        if (palette == null) {
+            SceneView.lastActiveSceneView.TryGetOverlay("Palette", out Overlay match);
+            if (match is PaintToolOverlayPanel) {
+                palette = match as PaintToolOverlayPanel;
+                palette.OnSelectState += PaletteStateChanged;
+                palette.OnObstacleWeightChange += PaletteObstacleWeightChanged;
+                palette.OnEndPointChange += PaletteEndPointChanged;
+            }
         }
     }
 
@@ -48,9 +65,31 @@ public class PaintTool : EditorTool
         base.OnWillBeDeactivated();
         SceneView.duringSceneGui -= UpdateSceneViewMouseRay;
         isActive = false;
+
+        if (palette != null) {
+            palette.OnSelectState -= PaletteStateChanged;
+            palette.OnObstacleWeightChange -= PaletteObstacleWeightChanged;
+            palette.OnEndPointChange -= PaletteEndPointChanged;
+        }
     }
 
-    private bool HighlightCurrentCell(ref SquareGrid grid, out Cell currentCell) {
+    private void PaletteStateChanged(CellInfo.State state, bool value) {
+        if (value) currentState |= (int)state; // turn on state
+        else currentState &= ~(int)state; // turn off state;
+        Debug.Log($"{Convert.ToString(currentState, 2).PadLeft(4, '0')} {currentObstacleWeight} {currentEndPoint}");
+    }
+
+    private void PaletteObstacleWeightChanged(int obstacleWeight) {
+        currentObstacleWeight = obstacleWeight;
+        Debug.Log($"{Convert.ToString(currentState, 2).PadLeft(4, '0')} {currentObstacleWeight} {currentEndPoint}");
+    }
+
+    private void PaletteEndPointChanged(Vector2 endPoint) {
+        currentEndPoint = endPoint;
+        Debug.Log($"{Convert.ToString(currentState, 2).PadLeft(4, '0')} {currentObstacleWeight} {currentEndPoint}");
+    }
+
+    private bool HighlightCurrentCell(SquareGrid grid, out Cell currentCell) {
         currentCell = null;
         if (Physics.Raycast(ptwr, out RaycastHit hitInfo, 1000, LayerMask.GetMask("Floor"))) {
             Vector3 gridSpaceCoords = hitInfo.point - grid.transform.position;
@@ -76,7 +115,8 @@ public class PaintTool : EditorTool
         Vector3 mousePosition = e.mousePosition;
 
         // normal screenPointToRay doesn't work with scene view camera
-        // world ray gets messed up when clicking mouse
+        // world ray gets messed up when clicking mouse so we only update ptwr
+        // on an event where the mouse moves
         if (e.type is EventType.MouseMove or EventType.MouseDrag) {
             ptwr = HandleUtility.GUIPointToWorldRay(mousePosition);
         }
