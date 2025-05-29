@@ -14,12 +14,17 @@ using Toggle = UnityEngine.UIElements.Toggle;
 public class PaintToolOverlayPanel : Overlay, ITransientOverlay
 {
     private SquareGrid grid;
+    private CellInfo initialInfo;
     public event Action<CellInfo.State, bool> OnSelectState;
-    public event Action<int> OnObstacleWeightChange;
-    public event Action<Vector2> OnEndPointChange;
+    public event Action<uint> OnObstacleWeightChange;
+    public event Action<Vector2Int> OnEndPointChange;
 
-    public void SetCurrentGrid(in SquareGrid currentGrid) {
+    public void Initialize(SquareGrid currentGrid, int initialState, uint initialWeight, Vector2Int initialEndpoint) {
         grid = currentGrid;
+        initialInfo = new CellInfo();
+        initialInfo.SetState(initialState);
+        initialInfo.obstacleWeight = initialWeight;
+        initialInfo.endPoint = initialEndpoint;
     }
 
     /// <inheritdoc />
@@ -39,6 +44,7 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
 
     private void CreateBlockedBox(ref VisualElement root) {
         Toggle toggleBlocked = new Toggle("Blocked");
+        toggleBlocked.value = initialInfo.InState(CellInfo.State.Blocked);
         toggleBlocked.RegisterCallback<ChangeEvent<bool>>(context => {
             OnSelectState?.Invoke(CellInfo.State.Blocked, context.newValue);
         });
@@ -48,14 +54,15 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
     }
 
     private void CreateObstacleBox(ref VisualElement root) {
-        VisualElement toggleObstacle = new Toggle("Obstacle");
+        Toggle toggleObstacle = new Toggle("Obstacle");
+        toggleObstacle.value = initialInfo.InState(CellInfo.State.Obstacle);
         UnsignedIntegerField obstacleWeight = new UnsignedIntegerField();
-        obstacleWeight.value = 1;
+        obstacleWeight.value = Math.Max(1, initialInfo.obstacleWeight);
         obstacleWeight.selectAllOnFocus = true;
 
         obstacleWeight.RegisterCallback<ChangeEvent<uint>>(context => {
             if (context.newValue >= 1) {
-                OnObstacleWeightChange?.Invoke((int)context.newValue);
+                OnObstacleWeightChange?.Invoke(context.newValue);
             }
         });
         obstacleWeight.RegisterCallback<BlurEvent>(context => {
@@ -64,6 +71,7 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
         });
 
         toggleObstacle.RegisterCallback<ChangeEvent<bool>>(context => {
+            Debug.Log(context.newValue);
             OnSelectState?.Invoke(CellInfo.State.Obstacle, context.newValue);
         });
         obstacleWeight.style.height = 16;
@@ -77,7 +85,9 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
 
     private void CreatePortalBox(ref VisualElement root) {
         Toggle togglePortal = new Toggle("Portal");
+        togglePortal.value = initialInfo.InState(CellInfo.State.Portal);
         Vector2IntField portalEndpoint = new Vector2IntField();
+        portalEndpoint.value = initialInfo.endPoint;
         portalEndpoint.RegisterCallback<ChangeEvent<Vector2Int>>(context => {
             bool xInRange = context.newValue.x >= 0 && context.newValue.x < grid.gridSize;
             bool yInRange = context.newValue.y >= 0 && context.newValue.y < grid.gridSize;
@@ -108,6 +118,7 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
 
     private void CreateCheckpointBox(ref VisualElement root) {
         Toggle toggleCheckpoint = new Toggle("Checkpoint");
+        toggleCheckpoint.value = initialInfo.InState(CellInfo.State.Checkpoint);
         VisualElement checkpointBox = new Box();
         toggleCheckpoint.RegisterCallback<ChangeEvent<bool>>(context => {
             OnSelectState?.Invoke(CellInfo.State.Checkpoint, context.newValue);

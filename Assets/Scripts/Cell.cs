@@ -53,10 +53,10 @@ public struct CellInfo
     private int _state;
     public int state => _state;
 
-    private int _obstacleValue;
-    private int _endPoint;
+    private uint _obstacleValue;
+    private Vector2Int _endPoint;
 
-    public int obstacleValue {
+    public uint obstacleWeight {
         get {
             if (InState(State.Obstacle)) return _obstacleValue;
             else return 0;
@@ -70,7 +70,7 @@ public struct CellInfo
             }
         }
     }
-    public int endPoint {
+    public Vector2Int endPoint {
         get => _endPoint;
         set => _endPoint = value;
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditor.EditorTools;
 using UnityEditor.Overlays;
@@ -12,12 +13,13 @@ public class PaintTool : EditorTool
 {
     public static bool isActive { get; private set; }
 
+    private bool mouseDown;
     private Ray ptwr;
     private PaintToolOverlayPanel palette;
 
     private int currentState = 0;
-    private int currentObstacleWeight = 1;
-    private Vector2 currentEndPoint;
+    private uint currentObstacleWeight = 1;
+    private Vector2Int currentEndPoint;
 
     [Shortcut("Activate Paint Tool", KeyCode.U)]
     static void PaintToolShortcut() {
@@ -34,10 +36,19 @@ public class PaintTool : EditorTool
 
         foreach (var obj in targets) {
             if (!(obj is SquareGrid grid)) continue;
-            palette.SetCurrentGrid(in grid);
+            palette.Initialize(grid, currentState, currentObstacleWeight, currentEndPoint);
             if (currentObstacleWeight < 1) currentObstacleWeight = 1;
-            
+
             if (!HighlightCurrentCell(grid, out Cell currentCell)) continue;
+
+            if (mouseDown) {
+                CellInfo newCellInfo = new CellInfo();
+                newCellInfo.SetState(currentState);
+                newCellInfo.obstacleWeight = currentObstacleWeight;
+                newCellInfo.endPoint = currentEndPoint;
+                currentCell.info = newCellInfo;
+                currentCell.CellInfoChanged();
+            }
 
             if (EditorGUI.EndChangeCheck()) { }
         }
@@ -76,17 +87,14 @@ public class PaintTool : EditorTool
     private void PaletteStateChanged(CellInfo.State state, bool value) {
         if (value) currentState |= (int)state; // turn on state
         else currentState &= ~(int)state; // turn off state;
-        Debug.Log($"{Convert.ToString(currentState, 2).PadLeft(4, '0')} {currentObstacleWeight} {currentEndPoint}");
     }
 
-    private void PaletteObstacleWeightChanged(int obstacleWeight) {
+    private void PaletteObstacleWeightChanged(uint obstacleWeight) {
         currentObstacleWeight = obstacleWeight;
-        Debug.Log($"{Convert.ToString(currentState, 2).PadLeft(4, '0')} {currentObstacleWeight} {currentEndPoint}");
     }
 
-    private void PaletteEndPointChanged(Vector2 endPoint) {
+    private void PaletteEndPointChanged(Vector2Int endPoint) {
         currentEndPoint = endPoint;
-        Debug.Log($"{Convert.ToString(currentState, 2).PadLeft(4, '0')} {currentObstacleWeight} {currentEndPoint}");
     }
 
     private bool HighlightCurrentCell(SquareGrid grid, out Cell currentCell) {
@@ -119,6 +127,12 @@ public class PaintTool : EditorTool
         // on an event where the mouse moves
         if (e.type is EventType.MouseMove or EventType.MouseDrag) {
             ptwr = HandleUtility.GUIPointToWorldRay(mousePosition);
+        }
+        if (e.type is EventType.MouseDown or EventType.MouseDrag) {
+            mouseDown = e.button == 0;
+        }
+        else {
+            mouseDown = false;
         }
     }
 }
