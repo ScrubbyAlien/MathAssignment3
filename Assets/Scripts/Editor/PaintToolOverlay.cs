@@ -19,12 +19,15 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
     public event Action<uint> OnObstacleWeightChange;
     public event Action<Vector2Int> OnEndPointChange;
 
-    public void Initialize(SquareGrid currentGrid, int initialState, uint initialWeight, Vector2Int initialEndpoint) {
-        grid = currentGrid;
+    public void Initialize(int initialState, uint initialWeight, Vector2Int initialEndpoint) {
         initialInfo = new CellInfo();
         initialInfo.SetState(initialState);
         initialInfo.obstacleWeight = initialWeight;
         initialInfo.endPoint = initialEndpoint;
+    }
+
+    public void SetGrid(SquareGrid currentGrid) {
+        grid = currentGrid;
     }
 
     /// <inheritdoc />

@@ -17,7 +17,7 @@ public class PaintTool : EditorTool
     private Ray ptwr;
     private PaintToolOverlayPanel palette;
 
-    private int currentState = 0;
+    private int currentState;
     private uint currentObstacleWeight = 1;
     private Vector2Int currentEndPoint;
 
@@ -36,9 +36,7 @@ public class PaintTool : EditorTool
 
         foreach (var obj in targets) {
             if (!(obj is SquareGrid grid)) continue;
-            palette.Initialize(grid, currentState, currentObstacleWeight, currentEndPoint);
             if (currentObstacleWeight < 1) currentObstacleWeight = 1;
-
             if (!HighlightCurrentCell(grid, out Cell currentCell)) continue;
 
             if (mouseDown) {
@@ -58,30 +56,31 @@ public class PaintTool : EditorTool
     public override void OnActivated() {
         base.OnActivated();
         SceneView.duringSceneGui += UpdateSceneViewMouseRay;
-        isActive = true;
 
-        if (palette == null) {
-            SceneView.lastActiveSceneView.TryGetOverlay("Palette", out Overlay match);
-            if (match is PaintToolOverlayPanel) {
-                palette = match as PaintToolOverlayPanel;
-                palette.OnSelectState += PaletteStateChanged;
-                palette.OnObstacleWeightChange += PaletteObstacleWeightChanged;
-                palette.OnEndPointChange += PaletteEndPointChanged;
-            }
+        SceneView.lastActiveSceneView.TryGetOverlay("Palette", out Overlay match);
+        if (match is PaintToolOverlayPanel) {
+            palette = match as PaintToolOverlayPanel;
+            palette.OnSelectState += PaletteStateChanged;
+            palette.OnObstacleWeightChange += PaletteObstacleWeightChanged;
+            palette.OnEndPointChange += PaletteEndPointChanged;
+            palette.Initialize(currentState, currentObstacleWeight, currentEndPoint);
         }
+
+        isActive = true;
     }
 
     /// <inheritdoc />
     public override void OnWillBeDeactivated() {
         base.OnWillBeDeactivated();
         SceneView.duringSceneGui -= UpdateSceneViewMouseRay;
-        isActive = false;
 
         if (palette != null) {
             palette.OnSelectState -= PaletteStateChanged;
             palette.OnObstacleWeightChange -= PaletteObstacleWeightChanged;
             palette.OnEndPointChange -= PaletteEndPointChanged;
         }
+
+        isActive = false;
     }
 
     private void PaletteStateChanged(CellInfo.State state, bool value) {
