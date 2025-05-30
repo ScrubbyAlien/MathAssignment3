@@ -59,13 +59,19 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
     private void CreateObstacleBox(ref VisualElement root) {
         Toggle toggleObstacle = new Toggle("Obstacle");
         toggleObstacle.value = initialInfo.InState(CellInfo.State.Obstacle);
-        UnsignedIntegerField obstacleWeight = new UnsignedIntegerField();
+        UnsignedIntegerField obstacleWeight = new UnsignedIntegerField("Weight");
+        obstacleWeight.style.flexGrow = 1;
         obstacleWeight.value = Math.Max(1, initialInfo.obstacleWeight);
         obstacleWeight.selectAllOnFocus = true;
 
         obstacleWeight.RegisterCallback<ChangeEvent<uint>>(context => {
             if (context.newValue >= 1) {
                 OnObstacleWeightChange?.Invoke(context.newValue);
+            }
+            else {
+                OnObstacleWeightChange?.Invoke(1);
+                obstacleWeight.value = 1;
+                obstacleWeight.MarkDirtyRepaint();
             }
         });
         obstacleWeight.RegisterCallback<BlurEvent>(context => {
@@ -74,12 +80,12 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
         });
 
         toggleObstacle.RegisterCallback<ChangeEvent<bool>>(context => {
-            Debug.Log(context.newValue);
             OnSelectState?.Invoke(CellInfo.State.Obstacle, context.newValue);
         });
         obstacleWeight.style.height = 16;
         VisualElement obstacleBox = new Box();
         obstacleBox.style.flexDirection = FlexDirection.Row;
+        obstacleBox.style.width = 300;
         obstacleBox.Add(toggleObstacle);
         obstacleBox.Add(obstacleWeight);
 
@@ -90,6 +96,7 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
         Toggle togglePortal = new Toggle("Portal");
         togglePortal.value = initialInfo.InState(CellInfo.State.Portal);
         Vector2IntField portalEndpoint = new Vector2IntField();
+        portalEndpoint.style.flexGrow = 1;
         portalEndpoint.value = initialInfo.endPoint;
         portalEndpoint.RegisterCallback<ChangeEvent<Vector2Int>>(context => {
             bool xInRange = context.newValue.x >= 0 && context.newValue.x < grid.gridSize;
@@ -112,7 +119,6 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
         portalEndpoint.style.height = 16;
         VisualElement portalBox = new Box();
         portalBox.style.flexDirection = FlexDirection.Row;
-        portalBox.style.width = 240;
         portalBox.Add(togglePortal);
         portalBox.Add(portalEndpoint);
 

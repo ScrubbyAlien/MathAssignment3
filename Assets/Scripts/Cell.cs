@@ -51,22 +51,23 @@ public struct CellInfo
 {
     [SerializeField]
     private int _state;
-    public int state => _state;
-
-    private uint _obstacleValue;
+    [SerializeField]
+    private uint _obstacleWeight;
+    [SerializeField]
     private Vector2Int _endPoint;
 
+    public int state => _state;
     public uint obstacleWeight {
         get {
-            if (InState(State.Obstacle)) return _obstacleValue;
+            if (InState(State.Obstacle)) return _obstacleWeight;
             else return 0;
         }
         set {
             if (value < 1) {
-                _obstacleValue = 1;
+                _obstacleWeight = 1;
             }
             else {
-                _obstacleValue = value;
+                _obstacleWeight = value;
             }
         }
     }
@@ -117,23 +118,25 @@ public class CellInfoDrawer : PropertyDrawer
     GUIContent portalLabel = new GUIContent("Portal");
     GUIContent checkpointLabel = new GUIContent("Checkpoint");
 
-    // public override float GetPropertyHeight(SerializedProperty property, GUIContent label) {
-    //     return EditorGUI.GetPropertyHeight(property, label, true);
-    // }
+    public override float GetPropertyHeight(SerializedProperty property, GUIContent label) {
+        return EditorGUI.GetPropertyHeight(property, label, true) - EditorGUIUtility.singleLineHeight;
+    }
 
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label) {
+        SquareGrid grid = GameObject.FindObjectOfType<SquareGrid>();
+
         GUIStyle propertyTitle = new GUIStyle();
         propertyTitle.fontStyle = FontStyle.Bold;
         propertyTitle.normal.textColor = Color.white;
 
         EditorGUILayout.LabelField("State", propertyTitle);
 
-        SerializedProperty byteStateProperty = property.FindPropertyRelative("byteState");
-        byte byteState = (byte)byteStateProperty.intValue;
-        bool blocked = (byteState & (byte)CellInfo.State.Blocked) > 0;
-        bool obstacle = (byteState & (byte)CellInfo.State.Obstacle) > 0;
-        bool portal = (byteState & (byte)CellInfo.State.Portal) > 0;
-        bool checkpoint = (byteState & (byte)CellInfo.State.Checkpoint) > 0;
+        SerializedProperty stateProperty = property.FindPropertyRelative("_state");
+        int state = stateProperty.intValue;
+        bool blocked = (state & (int)CellInfo.State.Blocked) > 0;
+        bool obstacle = (state & (int)CellInfo.State.Obstacle) > 0;
+        bool portal = (state & (int)CellInfo.State.Portal) > 0;
+        bool checkpoint = (state & (int)CellInfo.State.Checkpoint) > 0;
 
         blocked = EditorGUILayout.Toggle(blockedLabel, blocked);
         obstacle = EditorGUILayout.Toggle(obstacleLabel, obstacle);
@@ -141,10 +144,29 @@ public class CellInfoDrawer : PropertyDrawer
         checkpoint = EditorGUILayout.Toggle(checkpointLabel, checkpoint);
 
         byte newByteState = 0;
-        if (blocked) newByteState |= (byte)CellInfo.State.Blocked;
-        if (obstacle) newByteState |= (byte)CellInfo.State.Obstacle;
-        if (portal) newByteState |= (byte)CellInfo.State.Portal;
-        if (checkpoint) newByteState |= (byte)CellInfo.State.Checkpoint;
-        byteStateProperty.intValue = newByteState;
+        if (blocked) newByteState |= (int)CellInfo.State.Blocked;
+        if (obstacle) newByteState |= (int)CellInfo.State.Obstacle;
+        if (portal) newByteState |= (int)CellInfo.State.Portal;
+        if (checkpoint) newByteState |= (int)CellInfo.State.Checkpoint;
+        stateProperty.intValue = newByteState;
+
+        if (obstacle || portal) {
+            EditorGUILayout.Separator();
+
+            EditorGUILayout.LabelField("Cell Data", propertyTitle);
+
+            SerializedProperty obstacleWeight = property.FindPropertyRelative("_obstacleWeight");
+            SerializedProperty endPoint = property.FindPropertyRelative("_endPoint");
+
+            if (obstacle) EditorGUILayout.PropertyField(obstacleWeight);
+            if (portal) EditorGUILayout.PropertyField(endPoint);
+
+            obstacleWeight.uintValue = Math.Max(1, obstacleWeight.uintValue);
+
+            Vector2Int clampedEndPointCoords = endPoint.vector2IntValue;
+            clampedEndPointCoords.x = Math.Clamp(clampedEndPointCoords.x, 0, grid.gridSize - 1);
+            clampedEndPointCoords.y = Math.Clamp(clampedEndPointCoords.y, 0, grid.gridSize - 1);
+            endPoint.vector2IntValue = clampedEndPointCoords;
+        }
     }
 }

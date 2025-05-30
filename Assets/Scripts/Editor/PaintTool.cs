@@ -36,6 +36,7 @@ public class PaintTool : EditorTool
 
         foreach (var obj in targets) {
             if (!(obj is SquareGrid grid)) continue;
+            palette.SetGrid(grid);
             if (currentObstacleWeight < 1) currentObstacleWeight = 1;
             if (!HighlightCurrentCell(grid, out Cell currentCell)) continue;
 
