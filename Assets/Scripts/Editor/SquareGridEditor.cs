@@ -15,14 +15,11 @@ public class SquareGridEditor : Editor
         base.OnInspectorGUI();
 
         string generateButtonString;
-        if (grid.sizeChanged) generateButtonString = "Regenerate Grid";
-        else generateButtonString = "Generate Grid";
+        if (grid.sizeChanged) generateButtonString = "Generate Grid";
+        else generateButtonString = "Clear grid";
 
         if (GUILayout.Button(generateButtonString)) {
             grid.GenerateGrid();
-        }
-        if (GUILayout.Button("Clear Grid")) {
-            grid.ClearCells(true);
         }
     }
 }

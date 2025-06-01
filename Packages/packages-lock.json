@@ -154,6 +154,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "se.his.vector-renderer": {
+      "version": "https://github.com/UniversityOfSkovde/Vector-Renderer.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "44e9ee8565ada5d5461c353d09211f8e5a1d73c3"
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,

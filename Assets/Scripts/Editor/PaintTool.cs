@@ -56,6 +56,8 @@ public class PaintTool : EditorTool
     /// <inheritdoc />
     public override void OnActivated() {
         base.OnActivated();
+        ResetPalette();
+
         SceneView.duringSceneGui += UpdateSceneViewMouseRay;
 
         SceneView.lastActiveSceneView.TryGetOverlay("Palette", out Overlay match);
@@ -134,5 +136,11 @@ public class PaintTool : EditorTool
         else {
             mouseDown = false;
         }
+    }
+
+    private void ResetPalette() {
+        currentState = 0;
+        currentEndPoint = Vector2Int.zero;
+        currentObstacleWeight = 1;
     }
 }

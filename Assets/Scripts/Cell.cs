@@ -12,10 +12,14 @@ public class Cell : MonoBehaviour
     public CellInfo info;
     [SerializeField]
     private GameObject[] stateObjects;
+    [SerializeField]
+    private Gradient obstacleGradient;
 
     [SerializeField]
     private bool coordsSet = false;
     public Vector2Int coords { get; private set; }
+
+    public Vector3 midpoint => transform.position + new Vector3(0.5f, 0, 0.5f);
 
     private IEnumerable<(int index, bool value)> GetStateIndices() {
         int state = info.state;
@@ -28,7 +32,12 @@ public class Cell : MonoBehaviour
 
     public void UpdateState() {
         foreach ((int index, bool value) in GetStateIndices()) {
-            stateObjects[index].gameObject.SetActive(value);
+            GameObject stateObject = stateObjects[index].gameObject;
+            stateObject.SetActive(value);
+            if (index == 1 && value) { // set obstacle color
+                float time = info.obstacleWeight / 20f;
+                stateObject.GetComponent<SpriteRenderer>().color = obstacleGradient.Evaluate(time);
+            }
         }
     }
 
@@ -44,6 +53,11 @@ public class Cell : MonoBehaviour
         OnCellInfoChange?.Invoke(info, coords.x, coords.y);
         UpdateState();
     }
+
+    public void SetCheckpointNumber(uint number) {
+        stateObjects[3].GetComponentInChildren<TextMesh>().text = number.ToString();
+        info.checkpointOrder = number;
+    }
 }
 
 [Serializable]
@@ -55,6 +69,8 @@ public struct CellInfo
     private uint _obstacleWeight;
     [SerializeField]
     private Vector2Int _endPoint;
+    [SerializeField]
+    private uint _checkpointOrder;
 
     public int state => _state;
     public uint obstacleWeight {
@@ -74,6 +90,10 @@ public struct CellInfo
     public Vector2Int endPoint {
         get => _endPoint;
         set => _endPoint = value;
+    }
+    public uint checkpointOrder {
+        get => _checkpointOrder;
+        set => _checkpointOrder = value;
     }
 
     public static CellInfo empty => new CellInfo();
@@ -111,7 +131,9 @@ public struct CellInfo
 
     /// <inheritdoc />
     public override string ToString() {
-        return Convert.ToString(_state, 2).PadLeft(4, '0');
+        string state = Convert.ToString(_state, 2).PadLeft(4, '0');
+        string data = $"ow: {obstacleWeight}, ep: {endPoint}, co: {checkpointOrder}";
+        return $"{state} ({data})";
     }
 }
 
@@ -146,7 +168,10 @@ public class CellInfoDrawer : PropertyDrawer
         blocked = EditorGUILayout.Toggle(blockedLabel, blocked);
         obstacle = EditorGUILayout.Toggle(obstacleLabel, obstacle);
         portal = EditorGUILayout.Toggle(portalLabel, portal);
+        EditorGUILayout.BeginHorizontal();
         checkpoint = EditorGUILayout.Toggle(checkpointLabel, checkpoint);
+        EditorGUILayout.LabelField($"Order: {property.FindPropertyRelative("_checkpointOrder").uintValue}");
+        EditorGUILayout.EndHorizontal();
 
         byte newByteState = 0;
         if (blocked) newByteState |= (int)CellInfo.State.Blocked;

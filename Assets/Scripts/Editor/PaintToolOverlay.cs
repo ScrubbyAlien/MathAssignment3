@@ -65,17 +65,22 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
         obstacleWeight.selectAllOnFocus = true;
 
         obstacleWeight.RegisterCallback<ChangeEvent<uint>>(context => {
-            if (context.newValue >= 1) {
+            if (context.newValue >= 1 && context.newValue <= 20) {
                 OnObstacleWeightChange?.Invoke(context.newValue);
             }
-            else {
+            else if (context.newValue < 1) {
                 OnObstacleWeightChange?.Invoke(1);
                 obstacleWeight.value = 1;
                 obstacleWeight.MarkDirtyRepaint();
             }
+            else {
+                OnObstacleWeightChange?.Invoke(20);
+                obstacleWeight.value = 20;
+                obstacleWeight.MarkDirtyRepaint();
+            }
         });
         obstacleWeight.RegisterCallback<BlurEvent>(context => {
-            obstacleWeight.value = Math.Max(1, obstacleWeight.value);
+            obstacleWeight.value = Math.Clamp(obstacleWeight.value, 1, 20);
             obstacleWeight.MarkDirtyRepaint();
         });
 
@@ -104,6 +109,13 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
             if (xInRange && yInRange) {
                 OnEndPointChange?.Invoke(context.newValue);
             }
+            else {
+                int x = Math.Clamp(portalEndpoint.value.x, 0, grid.gridSize - 1);
+                int y = Math.Clamp(portalEndpoint.value.y, 0, grid.gridSize - 1);
+                OnEndPointChange?.Invoke(new Vector2Int(x, y));
+                portalEndpoint.value = new Vector2Int(x, y);
+                portalEndpoint.MarkDirtyRepaint();
+            }
         });
         portalEndpoint.RegisterCallback<BlurEvent>(context => {
             int x = Math.Clamp(portalEndpoint.value.x, 0, grid.gridSize - 1);
@@ -128,7 +140,7 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
     private void CreateCheckpointBox(ref VisualElement root) {
         Toggle toggleCheckpoint = new Toggle("Checkpoint");
         toggleCheckpoint.value = initialInfo.InState(CellInfo.State.Checkpoint);
-        
+
         VisualElement checkpointBox = new Box();
         toggleCheckpoint.RegisterCallback<ChangeEvent<bool>>(context => {
             OnSelectState?.Invoke(CellInfo.State.Checkpoint, context.newValue);

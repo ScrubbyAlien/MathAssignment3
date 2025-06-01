@@ -10,12 +10,15 @@ public class CellEditor : Editor
     private SerializedProperty stateObjects;
     private SerializedProperty highlightMarker;
     private SerializedProperty coordsSet;
+    private SerializedProperty obstacleGradient;
 
     /// <inheritdoc />
     public override void OnInspectorGUI() {
         info = serializedObject.FindProperty("info");
         stateObjects = serializedObject.FindProperty("stateObjects");
         coordsSet = serializedObject.FindProperty("coordsSet");
+        obstacleGradient = serializedObject.FindProperty("obstacleGradient");
+
         bool instantiated = coordsSet.boolValue;
         EditorGUILayout.PropertyField(info);
 
@@ -23,6 +26,7 @@ public class CellEditor : Editor
         EditorGUILayout.Separator();
 
         if (!instantiated) {
+            EditorGUILayout.PropertyField(obstacleGradient);
             EditorGUILayout.PropertyField(stateObjects);
         }
 
