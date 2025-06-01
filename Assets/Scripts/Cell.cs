@@ -21,6 +21,9 @@ public class Cell : MonoBehaviour
 
     public Vector3 midpoint => transform.position + new Vector3(0.5f, 0, 0.5f);
 
+    [HideInInspector]
+    public int nodeIndex;
+
     private IEnumerable<(int index, bool value)> GetStateIndices() {
         int state = info.state;
         for (int i = 0; i < 4; i++) {

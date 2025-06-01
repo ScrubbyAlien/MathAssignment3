@@ -3,12 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using Vectors;
-
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 [SelectionBase, ExecuteInEditMode]
 public class SquareGrid : MonoBehaviour
@@ -50,17 +47,23 @@ public class SquareGrid : MonoBehaviour
 
     public bool sizeChanged => currentSize != size;
 
+    public List<int> checkpointNodeIndicies {
+        get {
+            List<int> returnList = new List<int>();
+            foreach (int cellIndex in checkpointOrder) {
+                returnList.Add(cells[cellIndex].nodeIndex);
+            }
+            return returnList;
+        }
+    }
+
     private void OnEnable() {
         vr = GetComponent<VectorRenderer>();
-#if UNITY_EDITOR
         EditorApplication.update += Update;
-#endif
     }
 
     private void OnDisable() {
-#if UNITY_EDITOR
         EditorApplication.update -= Update;
-#endif
     }
 
     private void Update() {

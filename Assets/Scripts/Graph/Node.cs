@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class Node<T>
 {
-    private int id;
+    public int id;
     private T data;
     public T ReadData() => data;
 
