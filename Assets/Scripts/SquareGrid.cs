@@ -36,11 +36,15 @@ public class SquareGrid : MonoBehaviour
         }
     }
 
-    public bool sizeChanged => currentSize != size;
-
-    private void OnEnable() {
-        // TODO check if has children an generate info from them if so
+    public IEnumerable<Cell> Cells() {
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
+                yield return this[x, y];
+            }
+        }
     }
+
+    public bool sizeChanged => currentSize != size;
 
     public void GenerateGrid() {
         if (size != currentSize) {
@@ -55,35 +59,32 @@ public class SquareGrid : MonoBehaviour
             cellInfo = new CellInfo[size * size];
         }
 
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
+        for (int y = 0; y < size; y++) {
+            for (int x = 0; x < size; x++) {
                 Cell cell = Instantiate(cellPrefab, transform);
-                InitializeCell(ref cell, i, j);
-                this[j, i] = cell;
+                InitializeCell(ref cell, x, y);
+                this[x, y] = cell;
             }
         }
+
+        GetComponent<Pathfinder>()?.CreateGraph(this);
     }
 
-    private void InitializeCell(ref Cell cell, int i, int j) {
-        cell.transform.position = new Vector3(j, 0, i);
-        cell.info = cellInfo[j * size + i];
+    private void InitializeCell(ref Cell cell, int x, int y) {
+        cell.transform.position = new Vector3(x, 0, y);
+        cell.info = cellInfo[y * size + x];
         cell.UpdateState();
-        cell.SetCoords(i, j);
-        cell.name = "Cell" + j + "," + i;
+        cell.SetCoords(x, y);
+        cell.name = "Cell" + x + "," + y;
         cell.OnCellInfoChange += UpdateCellInfo;
         // disable picking this object in the scene view
         // SceneVisibilityManager.instance.DisablePicking(cell.gameObject, true);
     }
 
-    private void UpdateCellInfo(CellInfo info, int i, int j) {
-        cellInfo[j * size + i] = info;
-    }
-
-    public void ApplyCellInfo() {
-        ForEachCell((cell, i, j) => {
-            cell.info = cellInfo[j * size + i];
-            cell.UpdateState();
-        });
+    private void UpdateCellInfo(CellInfo info, int x, int y) {
+        cellInfo[y * size + x] = info;
+        this[x, y].info = info;
+        GetComponent<Pathfinder>()?.CreateGraph(this);
     }
 
     public void ClearCells(bool nullilfyArrays = false) {
@@ -92,14 +93,6 @@ public class SquareGrid : MonoBehaviour
             cell.OnCellInfoChange -= UpdateCellInfo;
             DestroyImmediate(cell.gameObject);
             if (nullilfyArrays) NullifyArrays();
-        }
-    }
-
-    private void ForEachCell(Action<Cell, int, int> action) {
-        for (int i = 0; i < size; i++) {
-            for (int j = 0; j < size; j++) {
-                action(this[j, i], i, j);
-            }
         }
     }
 

@@ -15,7 +15,7 @@ public class Cell : MonoBehaviour
 
     [SerializeField]
     private bool coordsSet = false;
-    private (int j, int i) coords;
+    public Vector2Int coords { get; private set; }
 
     private IEnumerable<(int index, bool value)> GetStateIndices() {
         int state = info.state;
@@ -32,16 +32,16 @@ public class Cell : MonoBehaviour
         }
     }
 
-    public void SetCoords(int i, int j) {
+    public void SetCoords(int x, int y) {
         if (!coordsSet) {
-            coords = (j, i);
+            coords = new Vector2Int(x, y);
             coordsSet = true;
         }
     }
 
     public event Action<CellInfo, int, int> OnCellInfoChange;
     public void CellInfoChanged() {
-        OnCellInfoChange?.Invoke(info, coords.i, coords.j);
+        OnCellInfoChange?.Invoke(info, coords.x, coords.y);
         UpdateState();
     }
 }
@@ -90,6 +90,11 @@ public struct CellInfo
     public bool InState(State queryState) {
         return (_state & (int)queryState) > 0;
     }
+
+    public bool blocked => InState(State.Blocked);
+    public bool obstacle => InState(State.Obstacle);
+    public bool portal => InState(State.Portal);
+    public bool checkpoint => InState(State.Checkpoint);
 
     public void ClearState() {
         _state = 0;

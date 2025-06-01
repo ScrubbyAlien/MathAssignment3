@@ -15,7 +15,6 @@ public class CellEditor : Editor
     public override void OnInspectorGUI() {
         info = serializedObject.FindProperty("info");
         stateObjects = serializedObject.FindProperty("stateObjects");
-        highlightMarker = serializedObject.FindProperty("highlightMarker");
         coordsSet = serializedObject.FindProperty("coordsSet");
         bool instantiated = coordsSet.boolValue;
         EditorGUILayout.PropertyField(info);
@@ -24,7 +23,6 @@ public class CellEditor : Editor
         EditorGUILayout.Separator();
 
         if (!instantiated) {
-            EditorGUILayout.PropertyField(highlightMarker);
             EditorGUILayout.PropertyField(stateObjects);
         }
 

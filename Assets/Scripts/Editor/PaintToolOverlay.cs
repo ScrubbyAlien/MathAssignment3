@@ -128,6 +128,7 @@ public class PaintToolOverlayPanel : Overlay, ITransientOverlay
     private void CreateCheckpointBox(ref VisualElement root) {
         Toggle toggleCheckpoint = new Toggle("Checkpoint");
         toggleCheckpoint.value = initialInfo.InState(CellInfo.State.Checkpoint);
+        
         VisualElement checkpointBox = new Box();
         toggleCheckpoint.RegisterCallback<ChangeEvent<bool>>(context => {
             OnSelectState?.Invoke(CellInfo.State.Checkpoint, context.newValue);
