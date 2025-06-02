@@ -1,12 +1,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using Vectors;
 
-[ExecuteInEditMode]
+[ExecuteAlways]
 public class Pathfinder : MonoBehaviour
 {
     private VectorRenderer vr;
@@ -15,17 +16,16 @@ public class Pathfinder : MonoBehaviour
     private Vector2Int startPosition;
     [SerializeField, Min(0)]
     private int stepsPerRound;
+    public bool showAllPaths = true;
 
     private WeightedDigraph<Cell> graph;
     private List<int> nodeIndicies;
 
+    private const float vectorRadius = 0.125f;
+    private const float vectorTipHeight = 0.25f;
+
     private void OnEnable() {
         vr = GetComponent<VectorRenderer>();
-        EditorApplication.update += Update;
-    }
-
-    private void OnDisable() {
-        EditorApplication.update -= Update;
     }
 
     private void OnValidate() {
@@ -49,11 +49,70 @@ public class Pathfinder : MonoBehaviour
 
         if (graph != null) {
             Node<Cell> startNode = graph.GetNodeByIndex(grid[startPosition].nodeIndex);
-            Node<Cell>[] checkpointNodes = grid.checkpointNodeIndicies.Select(i => graph.GetNodeByIndex(i)).ToArray();
+            Node<Cell>[] checkpointNodes =
+                grid.checkpointNodeIndicies
+                    .Where(i => !grid[i].info.blocked)
+                    .Select(i => graph.GetNodeByIndex(i))
+                    .ToArray();
 
-            Dictionary<Node<Cell>, WeightedDigraph<Cell>.Path> paths = graph.Dijkstra(startNode, checkpointNodes);
+            Path<Cell> pathThroughCheckpoints = graph.Dijkstra(startNode, checkpointNodes).Subpath(stepsPerRound);
+            Dictionary<Node<Cell>, Path<Cell>> allPaths = graph.Dijkstra(startNode, stepsPerRound);
+            List<Edge<Cell>> drawnEdges = new();
 
             // draw paths
+            using (vr.Begin()) {
+                foreach (Edge<Cell> edge in pathThroughCheckpoints.edges) {
+                    Vector3 start = edge.start.ReadData().midpoint;
+                    Vector3 end = edge.end.ReadData().midpoint;
+                    if (edge.start.ReadData().info.portal) {
+                        start += Vector3.up * 0.5f;
+                        end += Vector3.up * 0.5f;
+                    }
+                    vr.Draw(start, end, Color.green, vectorRadius, vectorTipHeight);
+                    drawnEdges.Add(edge);
+                }
+            }
+
+            if (showAllPaths) {
+                foreach (Path<Cell> path in allPaths.Values) {
+                    using (vr.Begin()) {
+                        foreach (Edge<Cell> edge in path.edges) {
+                            // don't draw arrows ontop of each other
+                            Edge<Cell> reverseEdge = graph.GetEdge(edge.end, edge.start);
+                            if (drawnEdges.Contains(edge)) continue;
+                            if (reverseEdge != null && pathThroughCheckpoints.HasEdge(reverseEdge)) continue;
+                            Vector3 start = edge.start.ReadData().midpoint;
+                            Vector3 end = edge.end.ReadData().midpoint;
+                            vr.Draw(start, end, Color.gray, vectorRadius, vectorTipHeight);
+                            drawnEdges.Add(edge);
+                        }
+                    }
+                }
+            }
+
+            // update checkpoint cost numbers
+            foreach (int index in grid.checkpointNodeIndicies) {
+                Node<Cell> node = graph[grid[index].nodeIndex];
+                node.ReadData().SetCostNumber(-1);
+            }
+
+            if (grid.checkpointNodeIndicies.Count > 0) {
+                uint runningCost = 0;
+                int currentCheckPointIndex = 0;
+                foreach (Edge<Cell> edge in pathThroughCheckpoints.Subpath(stepsPerRound).edges) {
+                    Node<Cell> checkpoint = graph[grid.checkpointNodeIndicies[currentCheckPointIndex]];
+                    // if the first checkpoint is the startNode then the cost is zero
+                    if (graph[grid[0].nodeIndex] == startNode) startNode.ReadData().SetCostNumber(0);
+                    runningCost += edge.weight;
+
+                    Debug.Log($"{edge.end.id} {checkpoint.id}");
+                    if (edge.end == checkpoint) {
+                        Debug.Log("hello");
+                        checkpoint.ReadData().SetCostNumber((int)runningCost);
+                        currentCheckPointIndex++;
+                    }
+                }
+            }
         }
     }
 

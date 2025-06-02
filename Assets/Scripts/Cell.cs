@@ -58,8 +58,11 @@ public class Cell : MonoBehaviour
     }
 
     public void SetCheckpointNumber(uint number) {
-        stateObjects[3].GetComponentInChildren<TextMesh>().text = number.ToString();
+        stateObjects[3].GetComponentsInChildren<TextMesh>()[0].text = number.ToString();
         info.checkpointOrder = number;
+    }
+    public void SetCostNumber(int number) {
+        stateObjects[3].GetComponentsInChildren<TextMesh>()[1].text = number < 0 ? "(-)" : $"({number})";
     }
 }
 

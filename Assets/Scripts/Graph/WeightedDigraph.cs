@@ -1,17 +1,21 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 using UnityEditor.Experimental.GraphView;
+using UnityEngine;
 
 public class WeightedDigraph<T>
 {
     private List<Node<T>> nodes;
-    private List<Edge> edges;
+    private List<Edge<T>> edges;
 
     public WeightedDigraph() {
         nodes = new List<Node<T>>();
-        edges = new List<Edge>();
+        edges = new List<Edge<T>>();
     }
 
     public int AddNode(T nodeData) {
@@ -24,7 +28,18 @@ public class WeightedDigraph<T>
     public void AddEdge(int startIndex, int endIndex, uint weight) {
         Node<T> startNode = nodes[startIndex];
         Node<T> endNode = nodes[endIndex];
-        edges.Add(new Edge(startNode, endNode, weight));
+        edges.Add(new Edge<T>(startNode, endNode, weight));
+    }
+
+    [CanBeNull]
+    public Edge<T> GetEdge(int startIndex, int endIndex) {
+        return GetEdge(GetNodeByIndex(startIndex), GetNodeByIndex(endIndex));
+    }
+    [CanBeNull]
+    public Edge<T> GetEdge(Node<T> start, Node<T> end) {
+        List<Edge<T>> edge = OutEdges(start).Where(e => e.end == end).ToList();
+        if (edge.Count == 0) return null;
+        return edge.First();
     }
 
     public Node<T> this[int index] => GetNodeByIndex(index);
@@ -52,22 +67,22 @@ public class WeightedDigraph<T>
         return true;
     }
 
-    public List<Edge> InEdges(int index) {
+    public List<Edge<T>> InEdges(int index) {
         if (TryGetNodeByIndex(index, out Node<T> node)) {
             return InEdges(node);
         }
         return new();
     }
-    public List<Edge> InEdges(Node<T> node) {
+    public List<Edge<T>> InEdges(Node<T> node) {
         return edges.Where(e => e.end.Equals(node)).ToList();
     }
-    public List<Edge> OutEdges(int index) {
+    public List<Edge<T>> OutEdges(int index) {
         if (TryGetNodeByIndex(index, out Node<T> node)) {
             return OutEdges(node);
         }
         return new();
     }
-    public List<Edge> OutEdges(Node<T> node) {
+    public List<Edge<T>> OutEdges(Node<T> node) {
         return edges.Where(e => e.start.Equals(node)).ToList();
     }
 
@@ -91,31 +106,22 @@ public class WeightedDigraph<T>
         return OutEdges(index).Count;
     }
 
-    public struct Edge
-    {
-        public readonly Node<T> start;
-        public readonly Node<T> end;
-        public readonly uint weight;
-
-        public Edge(Node<T> start, Node<T> end, uint weight) {
-            this.start = start;
-            this.end = end;
-            this.weight = weight;
-        }
-    }
-
-    public Dictionary<Node<T>, Path> Dijkstra(Node<T> startNode, Node<T>[] checkPoints) {
+    private Dictionary<Node<T>, Path<T>> Dijkstra(Node<T> startNode, Node<T> exitNode, out Path<T> toExit, int max) {
         // set up groups
         Dictionary<Node<T>, uint> frontier =  new();
         Dictionary<Node<T>, uint> visited = new();
         Dictionary<Node<T>, uint> unvisited = new();
-        Dictionary<Node<T>, Path> reached = new();
+        Dictionary<Node<T>, Path<T>> reached = new();
 
-        // add all nodes in graph to the unvisited group, startnode is added to frontier
+        // add all nodes in graph to the unvisited group...
         foreach (Node<T> node in nodes) {
             unvisited.Add(node, uint.MaxValue);
         }
+        //...startnode is added to frontier
         frontier.Add(startNode, 0);
+        reached.Add(startNode, new Path<T>(new()));
+
+        toExit = new Path<T>(new());
 
         // search for shortest paths
         while (frontier.Count > 0) {
@@ -130,29 +136,43 @@ public class WeightedDigraph<T>
                 }
             }
 
-            // relax nextNode
+            Func<int, Vector2Int> convert = (int id) => {
+                int x = id % 17;
+                int y = Mathf.FloorToInt(id / 17);
+                return new Vector2Int(x, y);
+            };
 
-            foreach (Edge edge in OutEdges(nextNode)) {
+            // relax nextNode
+            if (exitNode != null && nextNode == exitNode) {
+                // if we are relaxing the exit node we have found the shortest path to it
+                toExit = reached[exitNode];
+                break;
+            }
+            foreach (Edge<T> edge in OutEdges(nextNode)) {
                 if (visited.ContainsKey(edge.end)) continue;
-                
+
                 uint currentg = unvisited[edge.end];
                 if (currentg > lowestg + edge.weight) {
                     unvisited[edge.end] = lowestg + edge.weight;
-                    
+
                     // update path to edge.end because shorter path has been found
-                    List<Edge> newPath = new List<Edge>() { edge };
+                    List<Edge<T>> newPath = new List<Edge<T>>() { edge };
                     if (reached.ContainsKey(nextNode)) { // this should only be false when nextNode is startNode
                         newPath = reached[nextNode].edges.Append(edge).ToList();
                     }
-                    
+
                     // set new path or update existing one
-                    if (!reached.TryAdd(edge.end, new Path(newPath))) {
-                        reached[edge.end] = new Path(newPath);
+                    if (!reached.TryAdd(edge.end, new Path<T>(newPath))) {
+                        reached[edge.end] = new Path<T>(newPath);
                     }
                 }
 
-                
-                if (!frontier.TryAdd(edge.end, unvisited[edge.end])) {
+                if (unvisited[edge.end] > max) {
+                    // if the distance to the unvisited node is longer than the max, we shorten the path 
+                    // and don't add it to the frontier
+                    reached[edge.end] = reached[edge.end].Subpath(max);
+                }
+                else if (!frontier.TryAdd(edge.end, unvisited[edge.end])) {
                     // if this node succeeds an already relaxed node, just update its g-value in the frontier
                     frontier[edge.end] = unvisited[edge.end];
                 }
@@ -167,18 +187,42 @@ public class WeightedDigraph<T>
         return reached;
     }
 
-    public class Path
-    {
-        public Node<T> startNode => edges[0].start;
-        public Node<T> endNode => edges[edges.Count - 1].end;
-        public List<Edge> edges;
+    /// <summary>
+    /// Returns the shortest path to the exit node. If no such path exists, or the exit node and the startNode are the same
+    /// the path returned will be empty.
+    /// </summary>
+    public Path<T> Dijkstra(Node<T> startNode, Node<T> exitNode, int max = Int32.MaxValue) {
+        Dijkstra(startNode, exitNode, out Path<T> exitPath, max);
+        return exitPath;
+    }
 
-        public uint totalCost => edges
-                                 .Select(t => t.weight)
-                                 .Aggregate((costPrev, costNext) => costPrev + costNext);
+    /// <summary>
+    /// Returns a dictionary of all reachable nodes from the start node and the shortest path there.
+    /// </summary>
+    /// <param name="startNode">The node to start searching from.</param>
+    /// <returns>Dictionary of all reachable nodes as keys and the shortest path to those nodes as values.</returns>
+    public Dictionary<Node<T>, Path<T>> Dijkstra(Node<T> startNode, int max) {
+        return Dijkstra(startNode, null, out Path<T> _, max);
+    }
 
-        public Path(List<Edge> edges) {
-            this.edges = edges;
+    /// <summary>
+    /// Return a path that takes the shortest path through the checkpoints in order.
+    /// </summary>
+    public Path<T> Dijkstra(Node<T> startNode,  Node<T>[] checkPoints) {
+        Path<T> pathThroughCheckpoints = new Path<T>(new());
+
+        for (int i = -1; i < checkPoints.Length - 1; i++) {
+            Node<T> fromNode;
+            Node<T> toNode;
+            if (i == -1) fromNode = startNode;
+            else fromNode = checkPoints[i];
+
+            toNode = checkPoints[i + 1];
+
+            // append the shortestPath between the previous checkpoint and the next checkpoint
+            pathThroughCheckpoints.Append(Dijkstra(fromNode, toNode));
         }
+
+        return pathThroughCheckpoints;
     }
 }

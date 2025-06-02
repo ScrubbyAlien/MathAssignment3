@@ -37,6 +37,11 @@ public class SquareGrid : MonoBehaviour
         set { cells[v.y * size + v.x] = value; }
     }
 
+    public Cell this[int index] {
+        get { return cells[index]; }
+        set { cells[index] = value; }
+    }
+
     public IEnumerable<Cell> Cells() {
         for (int y = 0; y < size; y++) {
             for (int x = 0; x < size; x++) {
@@ -111,15 +116,9 @@ public class SquareGrid : MonoBehaviour
         bool wasThisCellCheckpoint = checkpointOrder.Contains(CellIndex(thisCell));
         int cellIndex = CellIndex(this[x, y]);
         if (info.checkpoint) {
-            if (!wasThisCellCheckpoint) {
-                // add it to the list
-                checkpointOrder.Add(cellIndex);
-            }
-            else {
-                // move it to the end of the list
-                checkpointOrder.Remove(cellIndex);
-                checkpointOrder.Add(cellIndex);
-            }
+            // add to the end of the list, or if it already exists move it to the end
+            checkpointOrder.Remove(cellIndex);
+            checkpointOrder.Add(cellIndex);
         }
         else if (wasThisCellCheckpoint) {
             checkpointOrder.Remove(cellIndex);
@@ -139,7 +138,7 @@ public class SquareGrid : MonoBehaviour
         using (vr.Begin()) {
             foreach (Cell cell in portalCells) {
                 Vector3 start = cell.midpoint + Vector3.up * 0.6f;
-                Vector3 end = this[cell.info.endPoint].midpoint;
+                Vector3 end = this[cell.info.endPoint].midpoint + Vector3.up * 0.6f;
                 vr.Draw(start, end, Color.magenta, 0.07f, 0.23f);
             }
         }
