@@ -8,7 +8,7 @@ using UnityEditor.Overlays;
 using UnityEditor.ShortcutManagement;
 using UnityEngine;
 
-[EditorTool("Paint", typeof(SquareGrid))]
+[EditorTool("Paint", typeof(SquareGrid)), Icon("Assets/Icon/art-palette.png")]
 public class PaintTool : EditorTool
 {
     public static bool isActive { get; private set; }

@@ -43,6 +43,7 @@ public class SquareGrid : MonoBehaviour
     }
 
     public IEnumerable<Cell> Cells() {
+        if (cells.Length == 0) yield break;
         for (int y = 0; y < size; y++) {
             for (int x = 0; x < size; x++) {
                 yield return this[x, y];
@@ -76,8 +77,8 @@ public class SquareGrid : MonoBehaviour
     }
 
     public void GenerateGrid() {
-        currentSize = size;
         ClearCells();
+        currentSize = size;
 
         cells = new Cell[size * size];
         checkpointOrder = new List<int>();
@@ -149,16 +150,23 @@ public class SquareGrid : MonoBehaviour
             Cell cell = transform.GetChild(i).GetComponent<Cell>();
             cell.OnCellInfoChange -= UpdateCellInfo;
             DestroyImmediate(cell.gameObject);
-            NullifyArrays();
         }
+        ClearArrays();
+        currentSize = 0;
     }
 
-    private void NullifyArrays() {
-        cells = null;
-        checkpointOrder = null;
+    private void ClearArrays() {
+        cells = new Cell[0];
+        checkpointOrder = new();
     }
 
     private int CellIndex(Cell cell) {
         return Array.IndexOf(cells, cell);
+    }
+
+    public bool PositionInGrid(Vector2Int position) {
+        bool x = position.x >= 0 && position.x < currentSize;
+        bool y = position.x >= 0 && position.x < currentSize;
+        return x && y;
     }
 }
