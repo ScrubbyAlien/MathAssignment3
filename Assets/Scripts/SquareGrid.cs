@@ -135,6 +135,7 @@ public class SquareGrid : MonoBehaviour
     }
 
     private void DrawPortalConnections() {
+        if (currentSize == 0) return;
         List<Cell> portalCells = cells.Where(cell => cell.info.portal).ToList();
         using (vr.Begin()) {
             foreach (Cell cell in portalCells) {

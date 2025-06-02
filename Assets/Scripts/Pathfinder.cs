@@ -20,8 +20,6 @@ public class Pathfinder : MonoBehaviour
     private bool showAllPaths = true;
     [SerializeField]
     private bool canMoveDiagonally = false;
-    [SerializeField, Min(1)]
-    private float diagonalExtraCostFactor = 1.41f;
 
     private WeightedDigraph<Cell> graph;
     private List<int> nodeIndicies;
@@ -48,7 +46,7 @@ public class Pathfinder : MonoBehaviour
     }
 
     private void DrawVectors() {
-        if (!grid.PositionInGrid(startPosition)) return;
+        if (!grid || !grid.PositionInGrid(startPosition)) return;
 
         Vector3 startpositionStart = grid[startPosition].midpoint + Vector3.up * 1.5f;
         Vector3 startpositionEnd = startpositionStart + Vector3.down * 1.3f;
@@ -147,7 +145,6 @@ public class Pathfinder : MonoBehaviour
             for (int i = 0; i < adjacent.Count; i++) {
                 int adjacentIndex = adjacent[i];
                 if (graph[adjacentIndex].ReadData().info.blocked) continue;
-                if (i > 3) weight = (uint)Mathf.CeilToInt(weight * diagonalExtraCostFactor);
                 graph.AddEdge(index, adjacentIndex, weight);
             }
 
