@@ -45,13 +45,11 @@ public class Path<T>
 
     public void Append(Edge<T> edge) {
         if (isEmpty || edge.start == endNode) edges.Add(edge);
-        else {
-            Debug.Log($"{edge.start.id} {endNode.id}");
-            Debug.LogError("appended path start does not match this paths end");
-        }
+        else Debug.LogError("appended path start does not match this paths end");
     }
 
     public void Append(Path<T> path) {
+        if (path.isEmpty) return;
         if (isEmpty || path.startNode == endNode) edges.AddRange(path.edges);
         else Debug.LogError("appended path start does not match this paths end");
     }

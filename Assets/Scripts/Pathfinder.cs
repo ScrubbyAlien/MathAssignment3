@@ -17,6 +17,7 @@ public class Pathfinder : MonoBehaviour
     [SerializeField, Min(0)]
     private int stepsPerRound;
     public bool showAllPaths = true;
+    public bool canMoveDiagonally = false;
 
     private WeightedDigraph<Cell> graph;
     private List<int> nodeIndicies;
@@ -34,6 +35,8 @@ public class Pathfinder : MonoBehaviour
         clampedStartPosition.x = Math.Clamp(clampedStartPosition.x, 0, grid.gridSize - 1);
         clampedStartPosition.y = Math.Clamp(clampedStartPosition.y, 0, grid.gridSize - 1);
         startPosition = clampedStartPosition;
+
+        CreateGraph(grid);
     }
 
     private void Update() {
@@ -64,7 +67,8 @@ public class Pathfinder : MonoBehaviour
                 foreach (Edge<Cell> edge in pathThroughCheckpoints.edges) {
                     Vector3 start = edge.start.ReadData().midpoint;
                     Vector3 end = edge.end.ReadData().midpoint;
-                    if (edge.start.ReadData().info.portal) {
+                    Edge<Cell> reverseEdge = graph.GetEdge(edge.end, edge.start);
+                    if (edge.start.ReadData().info.portal || drawnEdges.Contains(reverseEdge)) {
                         start += Vector3.up * 0.5f;
                         end += Vector3.up * 0.5f;
                     }
@@ -105,9 +109,7 @@ public class Pathfinder : MonoBehaviour
                     if (graph[grid[0].nodeIndex] == startNode) startNode.ReadData().SetCostNumber(0);
                     runningCost += edge.weight;
 
-                    Debug.Log($"{edge.end.id} {checkpoint.id}");
                     if (edge.end == checkpoint) {
-                        Debug.Log("hello");
                         checkpoint.ReadData().SetCostNumber((int)runningCost);
                         currentCheckPointIndex++;
                     }
@@ -157,17 +159,26 @@ public class Pathfinder : MonoBehaviour
         int up = index + grid.gridSize;
         int down = index - grid.gridSize;
 
-        if (index % grid.gridSize < grid.gridSize - 1) { // cell is not on rightmost column
-            indices.Add(right);
-        }
-        if (index % grid.gridSize > 0)  { // cell is not on leftmost column
-            indices.Add(left);
-        }
-        if (index > grid.gridSize) { // cell is not on bottom row
-            indices.Add(down);
-        }
-        if (index < grid.gridSize * grid.gridSize - grid.gridSize) { // cell is not on top row
-            indices.Add(up);
+        bool notRightMostColumn = index % grid.gridSize < grid.gridSize - 1;
+        bool notBottomRow = index > grid.gridSize;
+        bool notLeftMostColumn = index % grid.gridSize > 0;
+        bool notTopRow = index < grid.gridSize * grid.gridSize - grid.gridSize;
+
+        if (notRightMostColumn) indices.Add(right);
+        if (notBottomRow) indices.Add(down);
+        if (notLeftMostColumn) indices.Add(left);
+        if (notTopRow) indices.Add(up);
+
+        if (canMoveDiagonally) {
+            int downRight = right - grid.gridSize;
+            int downLeft = left - grid.gridSize;
+            int upLeft = left + grid.gridSize;
+            int upRight = right + grid.gridSize;
+
+            if (notRightMostColumn && notBottomRow) indices.Add(downRight);
+            if (notLeftMostColumn && notBottomRow) indices.Add(downLeft);
+            if (notLeftMostColumn && notTopRow) indices.Add(upLeft);
+            if (notRightMostColumn && notTopRow) indices.Add(upRight);
         }
 
         return indices;
