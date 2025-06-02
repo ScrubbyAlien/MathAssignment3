@@ -148,6 +148,7 @@ public class WeightedDigraph<T>
                 toExit = reached[exitNode];
                 break;
             }
+
             foreach (Edge<T> edge in OutEdges(nextNode)) {
                 if (visited.ContainsKey(edge.end)) continue;
 
@@ -156,10 +157,7 @@ public class WeightedDigraph<T>
                     unvisited[edge.end] = lowestg + edge.weight;
 
                     // update path to edge.end because shorter path has been found
-                    List<Edge<T>> newPath = new List<Edge<T>>() { edge };
-                    if (reached.ContainsKey(nextNode)) { // this should only be false when nextNode is startNode
-                        newPath = reached[nextNode].edges.Append(edge).ToList();
-                    }
+                    List<Edge<T>> newPath = reached[nextNode].edges.Append(edge).ToList();
 
                     // set new path or update existing one
                     if (!reached.TryAdd(edge.end, new Path<T>(newPath))) {
@@ -197,16 +195,18 @@ public class WeightedDigraph<T>
     }
 
     /// <summary>
-    /// Returns a dictionary of all reachable nodes from the start node and the shortest path there.
+    /// Returns a dictionary of all reachable nodes from the start node and the shortest path there. 
+    /// Only nodes whose path cost is less than or equal to max will be returned.
     /// </summary>
     /// <param name="startNode">The node to start searching from.</param>
+    /// <param name="max">The maximum path cost to the node</param>
     /// <returns>Dictionary of all reachable nodes as keys and the shortest path to those nodes as values.</returns>
     public Dictionary<Node<T>, Path<T>> Dijkstra(Node<T> startNode, int max) {
         return Dijkstra(startNode, null, out Path<T> _, max);
     }
 
     /// <summary>
-    /// Return a path that takes the shortest path through the checkpoints in order.
+    /// Return the shortest path through the checkpoints in order.
     /// </summary>
     public Path<T> Dijkstra(Node<T> startNode,  Node<T>[] checkPoints) {
         Path<T> pathThroughCheckpoints = new Path<T>(new());
