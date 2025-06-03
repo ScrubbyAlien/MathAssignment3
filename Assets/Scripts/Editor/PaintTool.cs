@@ -8,7 +8,7 @@ using UnityEditor.Overlays;
 using UnityEditor.ShortcutManagement;
 using UnityEngine;
 
-[EditorTool("Paint", typeof(SquareGrid)), Icon("Assets/Icon/art-palette.png")]
+[EditorTool("Palette", typeof(SquareGrid)), Icon("Assets/Icon/art-palette.png")]
 public class PaintTool : EditorTool
 {
     public static bool isActive { get; private set; }
@@ -40,6 +40,8 @@ public class PaintTool : EditorTool
             if (currentObstacleWeight < 1) currentObstacleWeight = 1;
             if (!HighlightCurrentCell(grid, out Cell currentCell)) continue;
 
+            Debug.Log("Highlight");
+            
             if (mouseDown) {
                 CellInfo newCellInfo = new CellInfo();
                 newCellInfo.SetState(currentState);

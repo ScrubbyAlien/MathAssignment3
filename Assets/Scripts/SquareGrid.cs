@@ -66,6 +66,7 @@ public class SquareGrid : MonoBehaviour
     private void OnEnable() {
         vr = GetComponent<VectorRenderer>();
         EditorApplication.update += Update;
+        ClearCells();
     }
 
     private void OnDisable() {
@@ -139,8 +140,10 @@ public class SquareGrid : MonoBehaviour
         List<Cell> portalCells = cells.Where(cell => cell.info.portal).ToList();
         using (vr.Begin()) {
             foreach (Cell cell in portalCells) {
+                Cell endPoint = this[cell.info.endPoint];
+                if (cell.info.blocked || endPoint.info.blocked) continue;
                 Vector3 start = cell.midpoint + Vector3.up * 0.6f;
-                Vector3 end = this[cell.info.endPoint].midpoint + Vector3.up * 0.6f;
+                Vector3 end = endPoint.midpoint + Vector3.up * 0.6f;
                 vr.Draw(start, end, Color.magenta, 0.07f, 0.23f);
             }
         }

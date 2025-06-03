@@ -34,12 +34,20 @@ public class Cell : MonoBehaviour
     }
 
     public void UpdateState() {
-        foreach ((int index, bool value) in GetStateIndices()) {
-            GameObject stateObject = stateObjects[index].gameObject;
-            stateObject.SetActive(value);
-            if (index == 1 && value) { // set obstacle color
-                float time = info.obstacleWeight / 20f;
-                stateObject.GetComponent<SpriteRenderer>().color = obstacleGradient.Evaluate(time);
+        if (info.blocked) {
+            stateObjects[0].SetActive(true);
+            for (int i = 1; i < 4; i++) {
+                stateObjects[i].SetActive(false);
+            }
+        }
+        else {
+            foreach ((int index, bool value) in GetStateIndices()) {
+                GameObject stateObject = stateObjects[index].gameObject;
+                stateObject.SetActive(value);
+                if (index == 1 && value) { // set obstacle color
+                    float time = info.obstacleWeight / 20f;
+                    stateObject.GetComponent<SpriteRenderer>().color = obstacleGradient.Evaluate(time);
+                }
             }
         }
     }
