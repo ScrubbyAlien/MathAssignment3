@@ -79,7 +79,7 @@ public struct CellInfo
 {
     [SerializeField]
     private int _state;
-    [SerializeField]
+    [SerializeField, Range(1, 20)]
     private uint _obstacleWeight;
     [SerializeField]
     private Vector2Int _endPoint;
@@ -184,7 +184,9 @@ public class CellInfoDrawer : PropertyDrawer
         portal = EditorGUILayout.Toggle(portalLabel, portal);
         EditorGUILayout.BeginHorizontal();
         checkpoint = EditorGUILayout.Toggle(checkpointLabel, checkpoint);
-        EditorGUILayout.LabelField($"Order: {property.FindPropertyRelative("_checkpointOrder").uintValue}");
+        if (checkpoint) {
+            EditorGUILayout.LabelField($"Order: {property.FindPropertyRelative("_checkpointOrder").uintValue}");
+        }
         EditorGUILayout.EndHorizontal();
 
         byte newByteState = 0;
