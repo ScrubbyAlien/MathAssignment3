@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.EditorTools;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using Vectors;
@@ -93,6 +94,10 @@ public class SquareGrid : MonoBehaviour
         }
 
         GetComponent<Pathfinder>()?.CreateGraph(this);
+
+        // prevent old palette overlay data to be used in new grid size
+        // this forces user to reselect palette tool which resets its overlay data
+        ToolManager.RestorePreviousTool();
     }
 
     private void InitializeCell(ref Cell cell, int x, int y) {

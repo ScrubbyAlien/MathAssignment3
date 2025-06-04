@@ -40,8 +40,6 @@ public class PaintTool : EditorTool
             if (currentObstacleWeight < 1) currentObstacleWeight = 1;
             if (!HighlightCurrentCell(grid, out Cell currentCell)) continue;
 
-            Debug.Log("Highlight");
-            
             if (mouseDown) {
                 CellInfo newCellInfo = new CellInfo();
                 newCellInfo.SetState(currentState);
