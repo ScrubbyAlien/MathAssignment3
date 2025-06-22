@@ -107,9 +107,12 @@ public class WeightedDigraph<T>
     }
 
     public Dictionary<Node<T>, Path<T>> Dijkstra(
-        Node<T> startNode, Node<T>[] exitNodes, out List<Path<T>> toExits, int max) {
+        Node<T> startNode,
+        Node<T>[] exitNodes,
+        out Dictionary<Node<T>, Path<T>> toExits,
+        int max) {
         // set up groups
-        Dictionary<Node<T>, uint> frontier =  new();
+        Dictionary<Node<T>, uint> frontier = new();
         Dictionary<Node<T>, uint> visited = new();
         Dictionary<Node<T>, uint> unvisited = new();
         Dictionary<Node<T>, Path<T>> reached = new();
@@ -141,7 +144,7 @@ public class WeightedDigraph<T>
             // check if this node is an exitNode
             if (exitNodes != null && exitNodes.Contains(nextNode)) {
                 // if we are relaxing an exit node we have found the shortest path to it
-                toExits.Add(reached[nextNode]);
+                toExits.Add(nextNode, reached[nextNode]);
                 // if the shortest path to all exit nodes have been found we break;
                 if (toExits.Count == exitNodes.Length) break;
             }
@@ -187,9 +190,16 @@ public class WeightedDigraph<T>
     /// Returns the shortest paths to the exit node. If no such path exists, or the exit node and the startNode are the same
     /// the path returned will be empty.
     /// </summary>
-    public Path<T> Dijkstra(Node<T> startNode, Node<T> exitNode, int max = Int32.MaxValue) {
-        Dijkstra(startNode, new[] { exitNode }, out List<Path<T>> exitPath, max);
-        return exitPath[0];
+    public bool Dijkstra(Node<T> startNode, Node<T> exitNode, out Path<T> path, int max = Int32.MaxValue) {
+        Dijkstra(startNode, new[] { exitNode }, out Dictionary<Node<T>, Path<T>> exitPath, max);
+        if (exitPath.Count > 0) {
+            path = exitPath[exitNode];
+            return true;
+        }
+        else {
+            path = null;
+            return false;
+        }
     }
 
     /// <summary>
@@ -200,13 +210,13 @@ public class WeightedDigraph<T>
     /// <param name="max">The maximum path cost to the node</param>
     /// <returns>Dictionary of all reachable nodes as keys and the shortest path to those nodes as values.</returns>
     public Dictionary<Node<T>, Path<T>> Dijkstra(Node<T> startNode, int max) {
-        return Dijkstra(startNode, null, out List<Path<T>> _, max);
+        return Dijkstra(startNode, null, out Dictionary<Node<T>, Path<T>> _, max);
     }
 
     /// <summary>
     /// Return the shortest path through the checkpoints in order.
     /// </summary>
-    public Path<T> Dijkstra(Node<T> startNode,  Node<T>[] checkPoints) {
+    public Path<T> Dijkstra(Node<T> startNode, Node<T>[] checkPoints) {
         Path<T> pathThroughCheckpoints = new Path<T>(new());
 
         for (int i = -1; i < checkPoints.Length - 1; i++) {
@@ -217,8 +227,12 @@ public class WeightedDigraph<T>
 
             toNode = checkPoints[i + 1];
 
-            // append the shortestPath between the previous checkpoint and the next checkpoint
-            pathThroughCheckpoints.Append(Dijkstra(fromNode, toNode));
+            if (Dijkstra(fromNode, toNode, out Path<T> path)) {
+                // append the shortestPath between the previous checkpoint and the next checkpoint
+                pathThroughCheckpoints.Append(path);
+            }
+            // else return only the the longest possible shortest path
+            else break;
         }
 
         return pathThroughCheckpoints;

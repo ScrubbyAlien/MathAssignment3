@@ -30,7 +30,7 @@ public class Pathfinder : MonoBehaviour
     private const float doubleDrawOffset = 0.3f;
 
     private Path<Cell> pathThroughCheckpoints;
-    private List<Path<Cell>> pathsToCheckpoints;
+    private Dictionary<Node<Cell>, Path<Cell>> pathsToCheckpoints;
     private Dictionary<Node<Cell>, Path<Cell>> allPaths;
 
     private void OnEnable() {
@@ -67,7 +67,7 @@ public class Pathfinder : MonoBehaviour
         HashSet<Edge<Cell>> greyEdges = new();
 
         // draw shortest path to each checkpoint from start
-        foreach (Path<Cell> path in pathsToCheckpoints) {
+        foreach (Path<Cell> path in pathsToCheckpoints.Values) {
             using (vr.Begin()) {
                 foreach (Edge<Cell> edge in path.edges) {
                     Vector3 start = edge.start.ReadData().midpoint;
@@ -168,18 +168,20 @@ public class Pathfinder : MonoBehaviour
                                            .ToArray();
 
         pathThroughCheckpoints = graph.Dijkstra(startNode, checkpointNodes).Subpath(stepsPerRound);
-        graph.Dijkstra(startNode, checkpointNodes, out List<Path<Cell>> toCheckpoints, int.MaxValue);
-        pathsToCheckpoints = toCheckpoints.Select(p => p.Subpath(stepsPerRound)).ToList();
+        graph.Dijkstra(startNode, checkpointNodes, out Dictionary<Node<Cell>, Path<Cell>> toCheckpoints, int.MaxValue);
+        pathsToCheckpoints = toCheckpoints;
         allPaths = graph.Dijkstra(startNode, stepsPerRound);
 
         // update checkpoint cost numbers
         foreach (int index in grid.checkpointNodeIndicies) {
             Node<Cell> node = graph[index];
-            allPaths.TryGetValue(node, out Path<Cell> path);
-            if (path != null && path.totalCost <= stepsPerRound) {
-                node.ReadData().SetCostNumber((int)path.totalCost);
+            pathsToCheckpoints.TryGetValue(node, out Path<Cell> path);
+            bool reachable = false;
+            if (path != null) {
+                reachable = path.totalCost <= stepsPerRound;
+                node.ReadData().SetCostNumber((int)path.totalCost, reachable);
             }
-            else node.ReadData().SetCostNumber(-1);
+            else node.ReadData().SetCostNumber(-1, reachable);
         }
     }
 
