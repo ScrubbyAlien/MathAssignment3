@@ -18,6 +18,7 @@ public class SquareGridEditor : Editor
         if (grid.sizeChanged) generateButtonString = "Generate Grid";
         else generateButtonString = "Reset grid";
 
+        if (grid.sizeChanged) EditorGUILayout.HelpBox("Please generate grid to see paths", MessageType.Warning);
         if (GUILayout.Button(generateButtonString)) {
             grid.GenerateGrid();
         }

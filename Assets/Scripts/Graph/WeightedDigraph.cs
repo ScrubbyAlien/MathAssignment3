@@ -111,107 +111,112 @@ public class WeightedDigraph<T>
         Node<T>[] exitNodes,
         out Dictionary<Node<T>, Path<T>> toExits,
         int max) {
-        // set up groups
+        // set up dictionaries
         Dictionary<Node<T>, uint> frontier = new();
         Dictionary<Node<T>, uint> visited = new();
         Dictionary<Node<T>, uint> unvisited = new();
-        Dictionary<Node<T>, Path<T>> reached = new();
-        HashSet<Node<T>> unreachable = new();
+        Dictionary<Node<T>, Path<T>> pathTo = new();
+        Dictionary<Node<T>, Path<T>> reachable = new();
 
         // add all nodes in graph to the unvisited group...
         foreach (Node<T> node in nodes) {
             unvisited.Add(node, uint.MaxValue);
         }
+        unvisited[startNode] = 0;
+
         //...startnode is added to frontier
         frontier.Add(startNode, 0);
-        reached.Add(startNode, new Path<T>(new()));
+
+        // the path to the start node is trivial
+        pathTo.Add(startNode, new Path<T>(new()));
 
         toExits = new();
+        bool exitsFound = false;
 
         // search for shortest paths
         while (frontier.Count > 0) {
             uint lowestg = uint.MaxValue;
-            Node<T> nextNode = null;
+            Node<T> currentlyVisitingNode = null;
 
             // find node with smallest g-value in frontier
             foreach (KeyValuePair<Node<T>, uint> pair in frontier) {
                 if (pair.Value < lowestg) {
                     lowestg = pair.Value;
-                    nextNode = pair.Key;
+                    currentlyVisitingNode = pair.Key;
                 }
             }
 
-            // check if this node is an exitNode
-            if (exitNodes != null && exitNodes.Contains(nextNode)) {
-                // if we are relaxing an exit node we have found the shortest path to it
-                toExits.Add(nextNode, reached[nextNode]);
-                // if the shortest path to all exit nodes have been found we break;
-                if (toExits.Count == exitNodes.Length) break;
-            }
+            // if the node with the smallest g is greater than the max and all exits have been found
+            // then no more nodes need to be searched and we can safely break
+            if (lowestg > max && exitsFound) break;
 
             // relax nextNode
-            foreach (Edge<T> edge in OutEdges(nextNode)) {
-                if (visited.ContainsKey(edge.end) || unreachable.Contains(edge.end)) continue;
+            foreach (Edge<T> edge in OutEdges(currentlyVisitingNode)) {
+                if (visited.ContainsKey(edge.end)) continue;
 
-                uint currentg = unvisited[edge.end];
-                if (currentg > lowestg + edge.weight) {
+                if (lowestg + edge.weight < unvisited[edge.end]) {
                     // shorter path has been found
                     unvisited[edge.end] = lowestg + edge.weight;
 
-                    List<Edge<T>> newPath = reached[nextNode].edges.Append(edge).ToList();
-                    if (!reached.TryAdd(edge.end, new Path<T>(newPath))) {
-                        reached[edge.end] = new Path<T>(newPath);
+                    List<Edge<T>> shorterPath = pathTo[currentlyVisitingNode].edges.Append(edge).ToList();
+                    if (!pathTo.TryAdd(edge.end, new Path<T>(shorterPath))) {
+                        pathTo[edge.end] = new Path<T>(shorterPath);
                     }
                 }
 
-                // if the distance to edge.end is no greater than the max then add it to the frontier
-                if (unvisited[edge.end] <= max) {
-                    if (!frontier.TryAdd(edge.end, unvisited[edge.end])) {
-                        // if this node succeeds an already relaxed node, just update its g-value in the frontier
-                        frontier[edge.end] = unvisited[edge.end];
-                    }
-                }
-                else {
-                    reached.Remove(edge.end);
-                    unreachable.Add(edge.end);
+                if (!frontier.TryAdd(edge.end, unvisited[edge.end])) {
+                    // if this node succeeds an already relaxed node, just update its g-value in the frontier
+                    frontier[edge.end] = unvisited[edge.end];
                 }
             }
 
             // remove from frontier and mark node as visited
-            frontier.Remove(nextNode);
-            unvisited.Remove(nextNode);
-            visited.Add(nextNode, lowestg);
+            frontier.Remove(currentlyVisitingNode);
+            unvisited.Remove(currentlyVisitingNode);
+            visited.Add(currentlyVisitingNode, lowestg);
+
+            // check if this node is an exitNode
+            if (!exitsFound && exitNodes != null && exitNodes.Contains(currentlyVisitingNode)) {
+                // if we are relaxing an exit node we have found the shortest path to it
+                toExits.Add(currentlyVisitingNode, pathTo[currentlyVisitingNode]);
+                if (toExits.Count == exitNodes.Length) exitsFound = true;
+            }
+
+            // if the distance to this node is no greater than the max add it to reachable
+            if (visited[currentlyVisitingNode] <= max) {
+                reachable.Add(currentlyVisitingNode, pathTo[currentlyVisitingNode]);
+            }
         }
 
-        return reached;
+        return reachable;
     }
 
-    /// <summary>
-    /// Returns the shortest paths to the exit node. If no such path exists, or the exit node and the startNode are the same
-    /// the path returned will be empty.
-    /// </summary>
-    public bool Dijkstra(Node<T> startNode, Node<T> exitNode, out Path<T> path, int max = Int32.MaxValue) {
-        Dijkstra(startNode, new[] { exitNode }, out Dictionary<Node<T>, Path<T>> exitPath, max);
-        if (exitPath.Count > 0) {
-            path = exitPath[exitNode];
-            return true;
-        }
-        else {
-            path = null;
-            return false;
-        }
-    }
+    // /// <summary>
+    // /// Returns the shortest paths to the exit node. If no such path exists, or the exit node and the startNode are the same
+    // /// the path returned will be empty.
+    // /// </summary>
+    // public bool Dijkstra(Node<T> startNode, Node<T> exitNode, out Path<T> path, int max = Int32.MaxValue) {
+    //     Dijkstra(startNode, new[] { exitNode }, out Dictionary<Node<T>, Path<T>> exitPath, max);
+    //     if (exitPath.Count > 0) {
+    //         path = exitPath[exitNode];
+    //         return true;
+    //     }
+    //     else {
+    //         path = null;
+    //         return false;
+    //     }
+    // }
 
-    /// <summary>
-    /// Returns a dictionary of all reachable nodes from the start node and the shortest path there. 
-    /// Only nodes whose path cost is less than or equal to max will be returned.
-    /// </summary>
-    /// <param name="startNode">The node to start searching from.</param>
-    /// <param name="max">The maximum path cost to the node</param>
-    /// <returns>Dictionary of all reachable nodes as keys and the shortest path to those nodes as values.</returns>
-    public Dictionary<Node<T>, Path<T>> Dijkstra(Node<T> startNode, int max) {
-        return Dijkstra(startNode, null, out Dictionary<Node<T>, Path<T>> _, max);
-    }
+    // /// <summary>
+    // /// Returns a dictionary of all reachable nodes from the start node and the shortest path there. 
+    // /// Only nodes whose path cost is less than or equal to max will be returned.
+    // /// </summary>
+    // /// <param name="startNode">The node to start searching from.</param>
+    // /// <param name="max">The maximum path cost to the node</param>
+    // /// <returns>Dictionary of all reachable nodes as keys and the shortest path to those nodes as values.</returns>
+    // public Dictionary<Node<T>, Path<T>> Dijkstra(Node<T> startNode, int max) {
+    //     return Dijkstra(startNode, null, out Dictionary<Node<T>, Path<T>> _, max);
+    // }
 
     /// <summary>
     /// Return the shortest path through the checkpoints in order.
@@ -227,7 +232,9 @@ public class WeightedDigraph<T>
 
             toNode = checkPoints[i + 1];
 
-            if (Dijkstra(fromNode, toNode, out Path<T> path)) {
+            Dijkstra(fromNode, new[] { toNode }, out Dictionary<Node<T>, Path<T>> pathToNode, int.MaxValue);
+
+            if (pathToNode.TryGetValue(toNode, out Path<T> path)) {
                 // append the shortestPath between the previous checkpoint and the next checkpoint
                 pathThroughCheckpoints.Append(path);
             }

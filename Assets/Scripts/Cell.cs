@@ -74,6 +74,10 @@ public class Cell : MonoBehaviour
         costText.text = number < 0 ? "(-)" : $"({number})";
         costText.color = reachableInSteps ? Color.black : Color.red;
     }
+    public void HideCostNumber(bool hidden) {
+        GameObject costText = stateObjects[3].transform.GetChild(1).gameObject;
+        costText.SetActive(!hidden);
+    }
 }
 
 [Serializable]

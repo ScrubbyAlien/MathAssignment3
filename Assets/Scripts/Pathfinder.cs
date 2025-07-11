@@ -20,6 +20,8 @@ public class Pathfinder : MonoBehaviour
     [SerializeField]
     private bool showAllPaths = true;
     [SerializeField]
+    private bool showPathThroughAllCheckpoints = true;
+    [SerializeField]
     private bool canMoveDiagonally = false;
 
     private WeightedDigraph<Cell> graph;
@@ -49,6 +51,7 @@ public class Pathfinder : MonoBehaviour
 
     private void Update() {
         DrawVectors();
+        HideCheckpointPathCosts();
     }
 
     private void DrawVectors() {
@@ -77,13 +80,15 @@ public class Pathfinder : MonoBehaviour
                         start += Vector3.up * doubleDrawOffset;
                         end += Vector3.up * doubleDrawOffset;
                     }
-                    vr.Draw(start, end, Color.blue, vectorRadius, vectorTipHeight);
+                    Color arrowColor = Color.cyan;
+                    if (path.CostUntilEdge(edge) > stepsPerRound) arrowColor = Color.blue;
+                    vr.Draw(start, end, arrowColor, vectorRadius, vectorTipHeight);
                     blueEdges.Add(edge);
                 }
             }
         }
 
-        if (pathsToCheckpoints.Count > 1) {
+        if (pathsToCheckpoints.Count > 1 && showPathThroughAllCheckpoints) {
             // draw path through checkpoints
             using (vr.Begin()) {
                 foreach (Edge<Cell> edge in pathThroughCheckpoints.edges) {
@@ -127,8 +132,8 @@ public class Pathfinder : MonoBehaviour
     public void CreateGraph(SquareGrid fromGrid) {
         grid = fromGrid;
 
-        int xStartClamped = Mathf.Clamp(startPosition.x, 0, grid.gridSize-1);
-        int yStartClamped = Mathf.Clamp(startPosition.y, 0, grid.gridSize-1);
+        int xStartClamped = Mathf.Clamp(startPosition.x, 0, grid.gridSize - 1);
+        int yStartClamped = Mathf.Clamp(startPosition.y, 0, grid.gridSize - 1);
         startPosition = new Vector2Int(xStartClamped, yStartClamped);
 
         graph = new();
@@ -171,12 +176,15 @@ public class Pathfinder : MonoBehaviour
                                            .Select(i => graph.GetNodeByIndex(i))
                                            .ToArray();
 
-        pathThroughCheckpoints = graph.Dijkstra(startNode, checkpointNodes).Subpath(stepsPerRound);
-        graph.Dijkstra(startNode, checkpointNodes, out Dictionary<Node<Cell>, Path<Cell>> toCheckpoints, int.MaxValue);
+        allPaths = graph.Dijkstra(
+            startNode, checkpointNodes, out Dictionary<Node<Cell>, Path<Cell>> toCheckpoints, stepsPerRound);
         pathsToCheckpoints = toCheckpoints;
-        allPaths = graph.Dijkstra(startNode, stepsPerRound);
+        
+        if (showPathThroughAllCheckpoints) {
+            pathThroughCheckpoints = graph.Dijkstra(startNode, checkpointNodes).Subpath(stepsPerRound);
+        }
 
-        // update checkpoint cost numbers
+        // update checkpoint cost number
         foreach (int index in grid.checkpointNodeIndicies) {
             Node<Cell> node = graph[index];
             pathsToCheckpoints.TryGetValue(node, out Path<Cell> path);
@@ -186,6 +194,13 @@ public class Pathfinder : MonoBehaviour
                 node.ReadData().SetCostNumber((int)path.totalCost, reachable);
             }
             else node.ReadData().SetCostNumber(-1, reachable);
+        }
+    }
+
+    public void HideCheckpointPathCosts() {
+        foreach (int index in grid.checkpointNodeIndicies) {
+            Node<Cell> node = graph[index];
+            node.ReadData().HideCostNumber(grid.sizeChanged);
         }
     }
 

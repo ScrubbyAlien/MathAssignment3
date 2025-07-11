@@ -76,6 +76,9 @@ public class SquareGrid : MonoBehaviour
 
     private void Update() {
         DrawPortalConnections();
+        if (sizeChanged) {
+            
+        }
     }
 
     public void GenerateGrid() {

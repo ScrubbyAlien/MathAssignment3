@@ -69,4 +69,17 @@ public class Path<T>
     }
 
     public bool HasEdge(Edge<T> edge) => edges.Contains(edge);
+
+    public uint CostUntilEdge(Edge<T> edge) {
+        if (!edges.Contains(edge)) {
+            throw new Exception("Edge does not exist in path!");
+        }
+
+        uint subcost = 0;
+        foreach (Edge<T> nextEdge in edges) {
+            subcost += nextEdge.weight;
+            if (nextEdge == edge) break;
+        }
+        return subcost;
+    }
 }
