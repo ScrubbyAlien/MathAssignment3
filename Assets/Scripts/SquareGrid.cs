@@ -136,10 +136,13 @@ public class SquareGrid : MonoBehaviour
     }
 
     private void UpdateCheckPointNumbers() {
+        uint checkpointNumber = 1;
         for (int i = 0; i < checkpointOrder.Count; i++) {
             int checkpointIndex = checkpointOrder[i];
             Cell checkpointCell = cells[checkpointIndex];
-            checkpointCell.SetCheckpointNumber((uint)i + 1);
+            if (checkpointCell.info.blocked) continue;
+            checkpointCell.SetCheckpointNumber(checkpointNumber);
+            checkpointNumber++;
         }
     }
 
