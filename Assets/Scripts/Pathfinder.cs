@@ -52,7 +52,7 @@ public class Pathfinder : MonoBehaviour
     }
 
     private void DrawVectors() {
-        if (!grid || !grid.PositionInGrid(startPosition)) return;
+        if (!grid || !grid.PositionInGrid(startPosition) || grid.sizeChanged) return;
 
         Vector3 startpositionStart = grid[startPosition].midpoint + Vector3.up * 1.5f;
         Vector3 startpositionEnd = startpositionStart + Vector3.down * 1.3f;
@@ -127,6 +127,10 @@ public class Pathfinder : MonoBehaviour
     public void CreateGraph(SquareGrid fromGrid) {
         grid = fromGrid;
 
+        int xStartClamped = Mathf.Clamp(startPosition.x, 0, grid.gridSize-1);
+        int yStartClamped = Mathf.Clamp(startPosition.y, 0, grid.gridSize-1);
+        startPosition = new Vector2Int(xStartClamped, yStartClamped);
+
         graph = new();
         nodeIndicies = new List<int>();
 
@@ -158,7 +162,7 @@ public class Pathfinder : MonoBehaviour
             }
         }
 
-        if (!grid || !grid.PositionInGrid(startPosition)) return;
+        if (!grid.PositionInGrid(startPosition)) return;
 
         // calculate paths
         Node<Cell> startNode = graph.GetNodeByIndex(grid[startPosition].nodeIndex);
