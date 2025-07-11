@@ -20,8 +20,6 @@ public class Pathfinder : MonoBehaviour
     [SerializeField]
     private bool showAllPaths = true;
     [SerializeField]
-    private bool showPathThroughAllCheckpoints = true;
-    [SerializeField]
     private bool canMoveDiagonally = false;
 
     private WeightedDigraph<Cell> graph;
@@ -88,26 +86,26 @@ public class Pathfinder : MonoBehaviour
             }
         }
 
-        if (pathsToCheckpoints.Count > 1 && showPathThroughAllCheckpoints) {
-            // draw path through checkpoints
-            using (vr.Begin()) {
-                foreach (Edge<Cell> edge in pathThroughCheckpoints.edges) {
-                    Vector3 start = edge.start.ReadData().midpoint;
-                    Vector3 end = edge.end.ReadData().midpoint;
-                    Edge<Cell> reverseEdge = graph.GetEdge(edge.end, edge.start);
-                    if (blueEdges.Contains(edge) || blueEdges.Contains(reverseEdge)) {
-                        start += Vector3.up * doubleDrawOffset;
-                        end += Vector3.up * doubleDrawOffset;
-                    }
-                    if (greenEdges.Contains(reverseEdge)) {
-                        start += Vector3.up * doubleDrawOffset;
-                        end += Vector3.up * doubleDrawOffset;
-                    }
-                    vr.Draw(start, end, Color.green, vectorRadius, vectorTipHeight);
-                    greenEdges.Add(edge);
-                }
-            }
-        }
+        // if (pathsToCheckpoints.Count > 1 && showPathThroughAllCheckpoints) {
+        //     // draw path through checkpoints
+        //     using (vr.Begin()) {
+        //         foreach (Edge<Cell> edge in pathThroughCheckpoints.edges) {
+        //             Vector3 start = edge.start.ReadData().midpoint;
+        //             Vector3 end = edge.end.ReadData().midpoint;
+        //             Edge<Cell> reverseEdge = graph.GetEdge(edge.end, edge.start);
+        //             if (blueEdges.Contains(edge) || blueEdges.Contains(reverseEdge)) {
+        //                 start += Vector3.up * doubleDrawOffset;
+        //                 end += Vector3.up * doubleDrawOffset;
+        //             }
+        //             if (greenEdges.Contains(reverseEdge)) {
+        //                 start += Vector3.up * doubleDrawOffset;
+        //                 end += Vector3.up * doubleDrawOffset;
+        //             }
+        //             vr.Draw(start, end, Color.green, vectorRadius, vectorTipHeight);
+        //             greenEdges.Add(edge);
+        //         }
+        //     }
+        // }
 
         // draw paths to all points that are reachable within one round
         if (showAllPaths) {
@@ -117,7 +115,7 @@ public class Pathfinder : MonoBehaviour
                         // don't draw arrows ontop of each other
                         Edge<Cell> reverseEdge = graph.GetEdge(edge.end, edge.start);
                         if (blueEdges.Contains(edge) || blueEdges.Contains(reverseEdge)) continue;
-                        if (greenEdges.Contains(edge) || greenEdges.Contains(reverseEdge)) continue;
+                        // if (greenEdges.Contains(edge) || greenEdges.Contains(reverseEdge)) continue;
                         if (greyEdges.Contains(edge) || greyEdges.Contains(reverseEdge)) continue;
                         Vector3 start = edge.start.ReadData().midpoint;
                         Vector3 end = edge.end.ReadData().midpoint;
@@ -180,9 +178,9 @@ public class Pathfinder : MonoBehaviour
             startNode, checkpointNodes, out Dictionary<Node<Cell>, Path<Cell>> toCheckpoints, stepsPerRound);
         pathsToCheckpoints = toCheckpoints;
         
-        if (showPathThroughAllCheckpoints) {
-            pathThroughCheckpoints = graph.Dijkstra(startNode, checkpointNodes).Subpath(stepsPerRound);
-        }
+        // if (showPathThroughAllCheckpoints) {
+        //     pathThroughCheckpoints = graph.Dijkstra(startNode, checkpointNodes).Subpath(stepsPerRound);
+        // }
 
         // update checkpoint cost number
         foreach (int index in grid.checkpointNodeIndicies) {
